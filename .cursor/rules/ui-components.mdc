@@ -1,0 +1,68 @@
+# UI Components & Styling Guide
+
+## Current Setup
+- **Styling**: Tailwind CSS for utility-first styling
+- **Components**: Basic React components with TypeScript
+- **Icons**: Not yet configured (recommend Lucide React)
+- **Themes**: Not yet configured (recommend next-themes)
+
+## Component Structure
+```typescript
+interface ComponentProps {
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export function Component({ 
+  children, 
+  className,
+  ...props 
+}: ComponentProps) {
+  return (
+    <div 
+      className={`base-styles ${className || ""}`}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+```
+
+## Styling Patterns
+- Use **Tailwind utility classes** for styling
+- Implement **responsive design** with Tailwind breakpoints
+- Use **CSS custom properties** for theme-aware colors
+- Apply **mobile-first** approach with responsive utilities
+
+## Component Guidelines
+- Use functional components with hooks
+- Implement proper TypeScript interfaces for props
+- Export components as named exports
+- Use descriptive prop names and interfaces
+- Handle optional props with default values
+
+## Layout Components
+- Use semantic HTML elements (`<main>`, `<section>`, `<article>`)
+- Implement proper heading hierarchy (h1 → h6)
+- Use flexbox and grid utilities for layouts
+- Ensure proper spacing with Tailwind margin/padding utilities
+
+## Form Components
+- Use controlled components with React state
+- Implement proper form validation
+- Use semantic form elements (`<form>`, `<fieldset>`, `<legend>`)
+- Provide clear error messages and feedback
+
+## Accessibility Guidelines
+- Use semantic HTML elements where appropriate
+- Implement proper ARIA attributes when needed
+- Ensure keyboard navigation works
+- Provide alt text for images
+- Maintain sufficient color contrast
+
+## Future Enhancements
+- Consider adding shadcn/ui for pre-built components
+- Add Radix UI for accessible primitives
+- Implement dark mode with next-themes
+- Add icon library like Lucide React

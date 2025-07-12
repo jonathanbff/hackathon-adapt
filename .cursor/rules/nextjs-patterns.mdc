@@ -1,0 +1,59 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Next.js App Router Patterns
+
+## App Router Structure
+- **Pages**: Create `page.tsx` files in route directories under [src/app/](mdc:src/app/)
+- **Layouts**: Use `layout.tsx` for shared UI across routes
+- **Loading**: Create `loading.tsx` for loading states
+- **Error**: Create `error.tsx` for error boundaries
+- **Not Found**: Create `not-found.tsx` for 404 pages
+
+## Server vs Client Components
+- **Default to Server Components** for better performance
+- Add `"use client"` directive only when needed:
+  - Using browser-only APIs
+  - Using event handlers
+  - Using state or effects
+  - Using custom hooks
+
+## Route Organization
+- Use **route groups** with `(groupName)` for organization without affecting URL
+- Use **parallel routes** with `@folder` for advanced layouts
+- Use **intercepting routes** with `(.)folder` for modals
+
+## Data Fetching Patterns
+- Use **Server Components** for initial data fetching
+- Use **tRPC** with React Query for client-side data fetching
+- Implement proper loading states and error handling
+- Use `Suspense` boundaries for streaming UI
+
+## Middleware
+- Configure middleware in [src/middleware.ts](mdc:src/middleware.ts)
+- Handle authentication, redirects, and request processing
+- Keep middleware lightweight and focused
+
+## API Routes
+- Place API routes in `src/app/api/` directory
+- Use **Route Handlers** (GET, POST, etc.) instead of pages API
+- Implement proper error handling and status codes
+- Use tRPC routers when possible for type safety
+
+## Dynamic Routes
+- Use `[param]` for dynamic segments
+- Use `[...slug]` for catch-all routes
+- Use `[[...slug]]` for optional catch-all routes
+- Access params via `params` prop in Server Components
+
+## Environment Variables
+- Configure environment variables in [src/env.js](mdc:src/env.js)
+- Use `@t3-oss/env-nextjs` for validation
+- Access via `env.VARIABLE_NAME` throughout the app
+
+## Metadata API
+- Use `generateMetadata` function for dynamic metadata
+- Export `metadata` object for static metadata
+- Implement proper SEO optimization

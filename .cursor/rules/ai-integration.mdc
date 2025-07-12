@@ -1,0 +1,133 @@
+---
+description: "AI integration - NOT CURRENTLY CONFIGURED"
+globs:
+alwaysApply: false
+---
+# ⚠️ NOT CONFIGURED - AI Integration with Vercel AI SDK
+
+**This rule is for future reference only. AI integration is not configured in the current project.**
+# AI Integration with Vercel AI SDK
+
+## AI SDK Setup
+- **Provider**: OpenAI integration via `@ai-sdk/openai`
+- **Core**: Vercel AI SDK for streaming and generation
+- **Configuration**: Set up API keys in [src/env.js](mdc:src/env.js)
+
+## Text Generation Patterns
+```typescript
+import { openai } from '@ai-sdk/openai';
+import { generateText, streamText } from 'ai';
+
+// Simple text generation
+const { text } = await generateText({
+  model: openai('gpt-4'),
+  prompt: 'Your prompt here',
+});
+
+// Streaming text generation
+const result = await streamText({
+  model: openai('gpt-4'),
+  prompt: 'Your prompt here',
+});
+```
+
+## Chat Implementation
+```typescript
+import { useChat } from 'ai/react';
+
+export function ChatComponent() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: '/api/chat',
+  });
+
+  return (
+    <div>
+      {messages.map((message) => (
+        <div key={message.id}>
+          <strong>{message.role}: </strong>
+          {message.content}
+        </div>
+      ))}
+      
+      <form onSubmit={handleSubmit}>
+        <input value={input} onChange={handleInputChange} />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  );
+}
+```
+
+## API Route Handlers
+```typescript
+// src/app/api/chat/route.ts
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const result = await streamText({
+    model: openai('gpt-4'),
+    messages,
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+## Streaming Best Practices
+- Use **streaming responses** for better user experience
+- Implement **loading states** during generation
+- Handle **connection errors** and retries
+- Provide **cancel functionality** for long-running requests
+
+## Prompt Engineering
+- Use **system messages** to set context and behavior
+- Implement **prompt templates** for consistency
+- Use **structured outputs** with JSON schemas when needed
+- Implement **prompt caching** for repeated patterns
+
+## Error Handling
+```typescript
+const { messages, error, isLoading } = useChat({
+  api: '/api/chat',
+  onError: (error) => {
+    console.error('Chat error:', error);
+    // Handle error appropriately
+  },
+});
+
+if (error) {
+  return <div>Error: {error.message}</div>;
+}
+```
+
+## Security Considerations
+- **Validate inputs** before sending to AI models
+- Implement **rate limiting** to prevent abuse
+- **Sanitize outputs** before displaying to users
+- Use **environment variables** for API keys
+- Consider **content filtering** for inappropriate content
+
+## Performance Optimization
+- Use **request caching** for identical prompts
+- Implement **response compression** for large outputs
+- Consider **model selection** based on use case complexity
+- Use **parallel requests** when generating multiple outputs
+
+## Integration with tRPC
+```typescript
+// In your tRPC router
+export const aiRouter = createTRPCRouter({
+  generateText: protectedProcedure
+    .input(z.object({ prompt: z.string() }))
+    .mutation(async ({ input }) => {
+      const { text } = await generateText({
+        model: openai('gpt-4'),
+        prompt: input.prompt,
+      });
+      return { text };
+    }),
+});
+```

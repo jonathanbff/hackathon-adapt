@@ -1,0 +1,58 @@
+# Current Project Setup Guide
+
+## Available Files & Structure
+
+### Core Configuration
+- [package.json](mdc:package.json) - Project dependencies
+- [tsconfig.json](mdc:tsconfig.json) - TypeScript configuration
+- [next.config.js](mdc:next.config.js) - Next.js configuration
+- [biome.jsonc](mdc:biome.jsonc) - Linting and formatting
+- [drizzle.config.ts](mdc:drizzle.config.ts) - Database configuration
+
+### Source Files
+- [src/app/layout.tsx](mdc:src/app/layout.tsx) - Root layout
+- [src/app/page.tsx](mdc:src/app/page.tsx) - Homepage
+- [src/app/_components/post.tsx](mdc:src/app/_components/post.tsx) - Post component
+- [src/app/api/trpc/[trpc]/route.ts](mdc:src/app/api/trpc/[trpc]/route.ts) - tRPC API handler
+
+### Server Configuration
+- [src/server/api/root.ts](mdc:src/server/api/root.ts) - Main tRPC router
+- [src/server/api/routers/post.ts](mdc:src/server/api/routers/post.ts) - Post router
+- [src/server/api/trpc.ts](mdc:src/server/api/trpc.ts) - tRPC configuration
+- [src/server/db/index.ts](mdc:src/server/db/index.ts) - Database connection
+- [src/server/db/schema.ts](mdc:src/server/db/schema.ts) - Database schemas
+
+### Client Configuration
+- [src/trpc/react.tsx](mdc:src/trpc/react.tsx) - tRPC React provider
+- [src/trpc/server.ts](mdc:src/trpc/server.ts) - Server-side tRPC
+- [src/trpc/query-client.ts](mdc:src/trpc/query-client.ts) - Query client setup
+
+### Styling
+- [src/styles/globals.css](mdc:src/styles/globals.css) - Global styles
+- [postcss.config.js](mdc:postcss.config.js) - PostCSS configuration
+
+### Environment
+- [src/env.js](mdc:src/env.js) - Environment validation
+- [.env.example](mdc:.env.example) - Environment template
+
+## What's NOT Yet Configured
+- Database schemas (empty schema.ts)
+- Authentication system
+- UI component library
+- Form handling
+- Error boundaries
+- Loading states
+- Data fetching beyond basic tRPC
+
+## Next Steps Recommendations
+1. **Database**: Define your first schema in [src/server/db/schema.ts](mdc:src/server/db/schema.ts)
+2. **Environment**: Copy .env.example to .env and configure
+3. **UI**: Add shadcn/ui or similar component library
+4. **Authentication**: Add Clerk or NextAuth.js
+5. **Components**: Build reusable components in src/components/
+
+## Development Workflow
+1. Run `pnpm dev` to start development server
+2. Make changes to existing files
+3. Use `pnpm lint` to check code quality
+4. Use `pnpm type-check` for TypeScript validation

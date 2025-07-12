@@ -1,0 +1,73 @@
+---
+alwaysApply: true
+description: "Project guidelines for UI components, code style, and architecture"
+---
+
+# Project Guidelines
+
+## UI/UX Standards
+
+### Component Framework
+- **Always use shadcn/ui** for all UI components
+- Follow **atomic design principles** with organized, reusable components
+- Keep components atomic and focused on single responsibilities
+- Store reusable UI components in [src/components/ui/](mdc:src/components/ui/)
+
+### Icons
+- **Use Lucide icons** whenever possible for consistency
+- Import specific icons to keep bundle size optimal
+- Prefer semantic icon names over decorative ones
+
+### Code Style
+- **Never use emojis** in code, comments, or commit messages
+- **Never add comments to code** - write self-documenting code instead
+- Use descriptive variable and function names
+- Follow professional coding standards throughout
+
+## Project Architecture
+
+This is a **Next.js full-stack hackathon/coding challenge platform** with modern architecture:
+
+### Tech Stack
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Database**: Drizzle ORM with PostgreSQL
+- **API**: tRPC for type-safe APIs
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Background Jobs**: Trigger.dev integration
+- **Package Manager**: pnpm
+
+### Key Structure
+
+#### App Router (`src/app/`)
+- **`(top-header)/`** - Main application route group
+  - Landing page components and challenge pages
+  - [challenges/[slug]/](mdc:src/app/(top-header)/challenges/[slug]/) - Dynamic challenge pages
+  - [profile/](mdc:src/app/(top-header)/profile/) - User profile management
+- **`admin/`** - Admin dashboard for challenge management
+- **`onboarding/`** - User onboarding flow with CV processing
+- **`api/`** - tRPC API routes
+
+#### Components (`src/components/`)
+- **`ui/`** - shadcn/ui reusable components
+- **Specialized components**: MDX renderer, editor, help chat
+
+#### Server Logic (`src/server/`)
+- **`api/`** - tRPC routers organized by domain
+- **`db/`** - Drizzle ORM schemas and connection
+- **`trigger/`** - Background jobs for CV processing
+- **`email/`** - Email templates and notifications
+
+### Core Features
+- **Challenge Platform**: Users join coding challenges and submit solutions
+- **Team Collaboration**: Team formation and collaborative features
+- **CV Processing**: Background pipeline for CV analysis during onboarding
+- **Profile Management**: Skills, experience, and education tracking
+- **Admin Dashboard**: Challenge and user management
+
+### Development Principles
+1. **Domain-Driven Structure**: Organize by business domains
+2. **Full-Stack TypeScript**: End-to-end type safety with tRPC
+3. **Component Architecture**: Clear separation of UI and business logic
+4. **Database-First**: Explicit schema definitions for all entities
+5. **Background Processing**: Complex workflows handled asynchronously

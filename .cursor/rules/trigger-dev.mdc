@@ -1,0 +1,112 @@
+---
+description: "Trigger.dev integration - NOT CURRENTLY CONFIGURED"
+globs:
+alwaysApply: false
+---
+# ⚠️ NOT CONFIGURED - Trigger.dev Background Jobs Integration
+
+**This rule is for future reference only. Trigger.dev is not configured in the current project.**
+# Trigger.dev Background Jobs Integration
+
+## Configuration
+- **Config File**: [trigger.config.ts](mdc:trigger.config.ts) - Main Trigger.dev configuration
+- **Jobs Directory**: [src/server/trigger/](mdc:src/server/trigger/) - Background job definitions
+- **Project ID**: `proj_leqylnldixpsgxochiit`
+- **Runtime**: Node.js with 3600 seconds max duration
+- **Extensions**: mupdf-tools and curl for PDF processing
+
+## Job Definition Patterns
+```typescript
+import { task } from "@trigger.dev/sdk/v3";
+
+export const exampleJob = task({
+  id: "example-job",
+  run: async (payload: JobPayload) => {
+    // Job logic here
+    return { success: true, data: result };
+  },
+});
+```
+
+## Job Organization
+- Place job files in [src/server/trigger/](mdc:src/server/trigger/) directory
+- Use descriptive names for job IDs (e.g., "process-document", "send-notification")
+- Group related jobs in subdirectories when appropriate
+- Export jobs for triggering from other parts of the application
+
+## Payload Validation
+```typescript
+import { z } from "zod";
+
+const jobPayloadSchema = z.object({
+  userId: z.string(),
+  documentId: z.string(),
+  options: z.object({
+    format: z.enum(["pdf", "png"]),
+    quality: z.number().min(1).max(100),
+  }).optional(),
+});
+
+export const processDocumentJob = task({
+  id: "process-document",
+  run: async (payload) => {
+    const validatedPayload = jobPayloadSchema.parse(payload);
+    // Process with validated data
+  },
+});
+```
+
+## Error Handling & Retries
+- Default retry configuration: 3 attempts with exponential backoff
+- Implement proper error handling within job functions
+- Use meaningful error messages for debugging
+- Consider idempotency for jobs that might be retried
+
+## Integration with tRPC
+```typescript
+// In your tRPC router
+import { exampleJob } from "~/server/trigger/example-job";
+
+export const jobRouter = createTRPCRouter({
+  triggerExample: protectedProcedure
+    .input(jobPayloadSchema)
+    .mutation(async ({ input }) => {
+      const handle = await exampleJob.trigger(input);
+      return { jobId: handle.id };
+    }),
+    
+  getJobStatus: protectedProcedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      // Query job status using Trigger.dev API
+      return await getJobStatus(input);
+    }),
+});
+```
+
+## File Processing Jobs
+- Use the configured mupdf-tools for PDF operations
+- Implement proper file validation before processing
+- Handle large files with streaming when possible
+- Clean up temporary files after processing
+
+## Development vs Production
+- Jobs are enabled in development via `enabledInDev: true`
+- Test jobs locally before deploying
+- Use environment variables for configuration differences
+- Monitor job performance and adjust timeouts as needed
+
+## Best Practices
+- **Idempotency**: Design jobs to be safely re-runnable
+- **Monitoring**: Log job progress and outcomes
+- **Resource Management**: Clean up resources (files, connections)
+- **Timeouts**: Set appropriate timeouts for different job types
+- **Batch Processing**: Group related operations when efficient
+- **Status Updates**: Provide progress feedback for long-running jobs
+
+## Common Job Types
+- **Document Processing**: PDF conversion, image generation
+- **Data Import/Export**: Bulk data operations
+- **Email/Notifications**: Asynchronous messaging
+- **File Uploads**: Processing uploaded content
+- **Scheduled Tasks**: Recurring maintenance operations

@@ -1,0 +1,92 @@
+# API & Database Patterns
+
+## tRPC Architecture
+- **Router**: Define API endpoints in [src/server/api/root.ts](mdc:src/server/api/root.ts)
+- **Procedures**: Create procedures in [src/server/api/routers/](mdc:src/server/api/routers/)
+- **Client**: Use tRPC client from [src/trpc/](mdc:src/trpc/) directory
+- **React Integration**: Use React Query hooks via tRPC
+
+## Procedure Patterns
+```typescript
+// Input validation with Zod
+const createPostSchema = z.object({
+  title: z.string().min(1),
+  content: z.string(),
+});
+
+// Procedure definition
+export const postRouter = createTRPCRouter({
+  create: protectedProcedure
+    .input(createPostSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Database operation
+      return await ctx.db.insert(posts).values(input);
+    }),
+    
+  getById: publicProcedure
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.query.posts.findFirst({
+        where: eq(posts.id, input),
+      });
+    }),
+});
+```
+
+## Database Schema (Drizzle ORM)
+- **Schemas**: Define tables in [src/server/db/schema.ts](mdc:src/server/db/schema.ts)
+- **Migrations**: Generate with `pnpm db:generate`
+- **Configuration**: Set up in [drizzle.config.ts](mdc:drizzle.config.ts)
+- **Database**: Configure connection in [src/server/db/index.ts](mdc:src/server/db/index.ts)
+
+## Schema Definition Example
+```typescript
+// src/server/db/schema.ts
+import { pgTable, varchar, timestamp, serial } from "drizzle-orm/pg-core";
+
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: varchar("content", { length: 2000 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+```
+
+## Database Best Practices
+- Use **transactions** for multi-table operations
+- Implement **proper indexes** for query performance
+- Use **prepared statements** for repeated queries
+- Handle **database errors** gracefully
+- Use **relations** for complex queries with joins
+
+## Client-Side Data Fetching
+```typescript
+// Query hook usage
+const { data, isLoading, error } = api.post.getById.useQuery("post-id");
+
+// Mutation hook usage
+const createPost = api.post.create.useMutation({
+  onSuccess: () => {
+    // Invalidate and refetch
+    void utils.post.getAll.invalidate();
+  },
+});
+```
+
+## Error Handling
+- Use **TRPCError** for API errors with proper codes
+- Implement **client-side error boundaries**
+- Provide **user-friendly error messages**
+- Log errors appropriately for debugging
+
+## Caching Strategy
+- Use **React Query** for client-side caching
+- Implement **optimistic updates** for better UX
+- Use **invalidation patterns** to keep data fresh
+- Configure **stale-while-revalidate** behavior
+
+## Real-time Updates
+- Implement **WebSocket connections** for live updates
+- Use **Server-Sent Events** for one-way communication
+- Consider **polling strategies** for simple real-time needs
