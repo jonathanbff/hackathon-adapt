@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph.message import MessageGraph
 
-from course_content_agent import generate_course_content  # Import the function
+from course_content_agent import generate_course_content
 
 
 def build_graph() -> MessageGraph:
@@ -25,14 +25,8 @@ def build_graph() -> MessageGraph:
     return builder.compile()
 
 
-def main() -> None:
-    if len(sys.argv) < 2:
-        print("Usage: python flashcards_agent.py 'Course topic'")
-        raise SystemExit(1)
-    topic = sys.argv[1]
-
-    # Generate course content first
-    course_content = generate_course_content(topic)
+def generate_flashcards(course_content: dict) -> dict:
+    """Generate flashcards based on the given course content."""
     content_json = json.dumps(course_content, ensure_ascii=False, indent=2)
 
     prompt = (
@@ -46,11 +40,23 @@ def main() -> None:
     messages = [HumanMessage(content=prompt)]
     result = graph.invoke(messages)
     response = result[-1].content
+    return json.loads(response)
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("Usage: python flashcards_agent.py 'Course topic'")
+        raise SystemExit(1)
+    topic = sys.argv[1]
+
+    # Generate course content first and then flashcards
+    course_content = generate_course_content(topic)
     try:
-        cards = json.loads(response)
+        cards = generate_flashcards(course_content)
         print(json.dumps(cards, indent=2, ensure_ascii=False))
-    except json.JSONDecodeError:
-        print(response)
+    except json.JSONDecodeError as exc:
+        # If the model returns invalid JSON, show the raw error
+        print(str(exc))
 
 
 if __name__ == "__main__":
