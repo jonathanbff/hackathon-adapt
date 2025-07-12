@@ -25,12 +25,6 @@ def build_graph() -> MessageGraph:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: python flashcards_agent.py 'Course content text'")
-        raise SystemExit(1)
-    content = sys.argv[1]
-
-    prompt = (
-        "Crie flashcards com perguntas e respostas curtas baseados no seguinte conte\u00fado:\n"
         f"{content}\n"
         "Responda em JSON no formato: {\n  'flashcards': [\n"
         "    {'question': '...', 'answer': '...'}, ...]\n}"
