@@ -26,6 +26,14 @@ python flashcards_agent.py "Conteúdo do curso"
 
 Isso imprimirá um conjunto de flashcards em JSON.
 
+### Gerar quizzes
+
+```bash
+python quizzes_agent.py "Conteúdo do curso"
+```
+
+Isso gerará um conjunto de perguntas de múltipla escolha em JSON.
+
 ## Running
 cd frontend
 ./start-database.sh
