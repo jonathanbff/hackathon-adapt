@@ -8,7 +8,6 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph.message import MessageGraph
 
-from course_content_agent import generate_course_content
 
 
 def build_graph() -> MessageGraph:
@@ -48,6 +47,8 @@ def main() -> None:
         print("Usage: python flashcards_agent.py 'Course topic'")
         raise SystemExit(1)
     topic = sys.argv[1]
+
+    from course_content_agent import generate_course_content
 
     # Generate course content first and then flashcards
     course_content = generate_course_content(topic)
