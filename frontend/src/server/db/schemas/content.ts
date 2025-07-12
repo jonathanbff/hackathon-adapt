@@ -3,6 +3,16 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { contentItems } from "./courses";
 
+export const content = pgTable("content", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  _clerk: varchar("_clerk", { length: 255 }).notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  content: text("content").notNull(),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const videos = pgTable("videos", {
   id: uuid("id").primaryKey().defaultRandom(),
   contentItemId: uuid("content_item_id").references(() => contentItems.id, { onDelete: "cascade" }).notNull(),
@@ -124,6 +134,8 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   }),
 }));
 
+export const insertContentSchema = createInsertSchema(content);
+export const selectContentSchema = createSelectSchema(content);
 export const insertVideoSchema = createInsertSchema(videos);
 export const selectVideoSchema = createSelectSchema(videos);
 export const insertVideoTimestampSchema = createInsertSchema(videoTimestamps);
@@ -139,6 +151,8 @@ export const selectFlashcardSchema = createSelectSchema(flashcards);
 export const insertActivitySchema = createInsertSchema(activities);
 export const selectActivitySchema = createSelectSchema(activities);
 
+export type Content = typeof content.$inferSelect;
+export type NewContent = typeof content.$inferInsert;
 export type Video = typeof videos.$inferSelect;
 export type NewVideo = typeof videos.$inferInsert;
 export type VideoTimestamp = typeof videoTimestamps.$inferSelect;

@@ -9,6 +9,7 @@ import {
   Search,
   Settings,
   User2,
+  Upload,
 } from "lucide-react"
 
 import {
@@ -51,6 +52,11 @@ const items = [
     title: "Search",
     url: "/search",
     icon: Search,
+  },
+  {
+    title: "Test Ingestion",
+    url: "/test-ingestion",
+    icon: Upload,
   },
   {
     title: "Settings",

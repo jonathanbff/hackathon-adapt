@@ -11,6 +11,12 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
+		BLOB_READ_WRITE_TOKEN: z.string(),
+		UPSTASH_VECTOR_REST_TOKEN: z.string(),
+		UPSTASH_VECTOR_REST_URL: z.string().url(),
+		LLAMA_CLOUD_API_KEY: z.string(),
+		OPENAI_API_KEY: z.string(),
+		TRIGGER_SECRET_KEY: z.string(),
 	},
 
 	/**
@@ -29,6 +35,12 @@ export const env = createEnv({
 	runtimeEnv: {
 		DATABASE_URL: process.env.DATABASE_URL,
 		NODE_ENV: process.env.NODE_ENV,
+		BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+		UPSTASH_VECTOR_REST_TOKEN: process.env.UPSTASH_VECTOR_REST_TOKEN,
+		UPSTASH_VECTOR_REST_URL: process.env.UPSTASH_VECTOR_REST_URL,
+		LLAMA_CLOUD_API_KEY: process.env.LLAMA_CLOUD_API_KEY,
+		OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+		TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
 		// NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
 	},
 	/**
