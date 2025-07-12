@@ -1,6 +1,38 @@
-# Create T3 App
+# Edu One - Education Platform
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+This is a [T3 Stack](https://create.t3.gg/) project with AI-powered chat functionality and document ingestion capabilities.
+
+## Features
+
+- **AI Chat Interface**: Integrated sidebar chat with conversation management
+- **Smart Title Generation**: AI-powered conversation titles using Groq
+- **Document Search**: Vector search through uploaded documents
+- **Web Search**: Real-time web search capabilities
+- **Message Persistence**: All conversations stored in database
+
+## Environment Variables
+
+Make sure to set up the following environment variables in your `.env` file:
+
+```bash
+# Required for AI chat functionality
+OPENAI_API_KEY=your_openai_api_key
+GROQ_API_KEY=your_groq_api_key
+
+# Database
+DATABASE_URL=your_database_url
+
+# Document processing
+UPSTASH_VECTOR_REST_TOKEN=your_upstash_token
+UPSTASH_VECTOR_REST_URL=your_upstash_url
+LLAMA_CLOUD_API_KEY=your_llama_cloud_key
+
+# File storage
+BLOB_READ_WRITE_TOKEN=your_blob_token
+
+# Background jobs
+TRIGGER_SECRET_KEY=your_trigger_secret
+```
 
 ## What's next? How do I make an app with this?
 

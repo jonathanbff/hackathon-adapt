@@ -12,6 +12,7 @@ interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
   content: string;
   timestamp?: Date;
   isLoading?: boolean;
+  compact?: boolean;
   toolCalls?: Array<{
     toolName: string;
     args: any;
@@ -52,37 +53,40 @@ function preprocessLatexContent(content: string): string {
 }
 
 const Message = React.forwardRef<HTMLDivElement, MessageProps>(
-  ({ className, role, content, timestamp, isLoading, toolCalls, ...props }, ref) => {
+  ({ className, role, content, timestamp, isLoading, compact, toolCalls, ...props }, ref) => {
     const processedContent = role === "assistant" ? preprocessLatexContent(content) : content;
     
     return (
       <div
         ref={ref}
         className={cn(
-          "flex w-full max-w-full gap-3 p-4",
+          "flex w-full max-w-full gap-3",
+          compact ? "p-2" : "p-4",
           role === "user" && "flex-row-reverse",
           className
         )}
         {...props}
       >
-        <Avatar className="h-8 w-8 flex-shrink-0">
+        <Avatar className={cn("flex-shrink-0", compact ? "h-6 w-6" : "h-8 w-8")}>
           <AvatarImage src={role === "user" ? "/user-avatar.png" : "/assistant-avatar.png"} />
           <AvatarFallback>
             {role === "user" ? "U" : role === "assistant" ? "A" : "S"}
           </AvatarFallback>
         </Avatar>
 
-        <div className={cn("flex-1 space-y-2", role === "user" && "text-right")}>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium capitalize">
-              {role === "assistant" ? "Assistant" : role === "user" ? "You" : "System"}
-            </span>
-            {timestamp && (
-              <span className="text-xs text-muted-foreground">
-                {timestamp.toLocaleTimeString()}
+        <div className={cn("flex-1", compact ? "space-y-1" : "space-y-2", role === "user" && "text-right")}>
+          {!compact && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium capitalize">
+                {role === "assistant" ? "Assistant" : role === "user" ? "You" : "System"}
               </span>
-            )}
-          </div>
+              {timestamp && (
+                <span className="text-xs text-muted-foreground">
+                  {timestamp.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          )}
 
           {toolCalls && toolCalls.length > 0 && (
             <div className="space-y-2">
@@ -115,7 +119,8 @@ const Message = React.forwardRef<HTMLDivElement, MessageProps>(
 
           <div
             className={cn(
-              "prose prose-sm max-w-none rounded-lg px-3 py-2",
+              "prose prose-sm max-w-none rounded-lg",
+              compact ? "px-2 py-1" : "px-3 py-2",
               role === "user"
                 ? "bg-primary text-primary-foreground prose-invert"
                 : "bg-muted/50 prose-stone dark:prose-invert",

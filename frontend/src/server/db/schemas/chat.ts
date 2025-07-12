@@ -6,8 +6,8 @@ import { videos } from "./content";
 
 export const chatConversations = pgTable("chat_conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  videoId: uuid("video_id").references(() => videos.id, { onDelete: "cascade" }).notNull(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+  videoId: uuid("video_id").references(() => videos.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

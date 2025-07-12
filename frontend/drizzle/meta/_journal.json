@@ -15,6 +15,20 @@
       "when": 1752348302406,
       "tag": "0001_funny_nicolaos",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752358472777,
+      "tag": "0002_careless_shiva",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1752360898031,
+      "tag": "0003_young_toxin",
+      "breakpoints": true
     }
   ]
 }
