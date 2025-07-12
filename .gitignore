@@ -1,2 +1,4 @@
 venv/
 .env
+frontend/start-database.sh
+frontend/src/env.js
