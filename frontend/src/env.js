@@ -42,3 +42,11 @@ export const env = createEnv({
 	 */
 	emptyStringAsUndefined: true,
 });
+
+// Set default values for environment variables
+if (!process.env.DATABASE_URL) {
+	process.env.DATABASE_URL = "";
+}
+
+// Do not assign to process.env.NODE_ENV as it may be read-only.
+// Instead, handle default in runtimeEnv or schema.
