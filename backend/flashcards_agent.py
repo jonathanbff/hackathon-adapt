@@ -48,7 +48,7 @@ def main() -> None:
         raise SystemExit(1)
     topic = sys.argv[1]
 
-    from course_content_agent import generate_course_content
+    from .course_content_agent import generate_course_content
 
     # Generate course content first and then flashcards
     course_content = generate_course_content(topic)
