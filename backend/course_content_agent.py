@@ -23,12 +23,8 @@ def build_graph() -> MessageGraph:
     return builder.compile()
 
 
-def main() -> None:
-    if len(sys.argv) < 2:
-        print("Usage: python course_content_agent.py 'Course topic'")
-        raise SystemExit(1)
-    topic = sys.argv[1]
-
+def generate_course_content(topic: str) -> dict:
+    """Generate course content for the given topic and return it as a dict."""
     prompt = (
         "Crie um curso sobre "
         f"{topic} com diversos módulos numerados iniciando em 1 e diversas aulas em cada modulo.\n"
@@ -40,11 +36,17 @@ def main() -> None:
     messages = [HumanMessage(content=prompt)]
     result = graph.invoke(messages)
     response = result[-1].content
-    try:
-        outline = json.loads(response)
-        print(json.dumps(outline, indent=2, ensure_ascii=False))
-    except json.JSONDecodeError:
-        print(response)
+    return json.loads(response)
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("Usage: python course_content_agent.py 'Course topic'")
+        raise SystemExit(1)
+    topic = sys.argv[1]
+
+    outline = generate_course_content(topic)
+    print(json.dumps(outline, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
