@@ -17,3 +17,9 @@ python course_content_agent.py "Tema do curso"
 ```
 
 O script exibirá a estrutura do curso em formato JSON.
+
+## Running
+cd frontend
+./start-database.sh
+cd backend
+python course_content_agent.py "Tema do curso"
