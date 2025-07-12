@@ -6,7 +6,7 @@ from typing import List
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
-from langgraph.graph.message import MessageGraph
+from langgraph.graph import MessageGraph
 
 
 def build_graph() -> MessageGraph:
