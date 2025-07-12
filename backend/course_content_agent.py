@@ -11,7 +11,7 @@ from langgraph.graph.message import MessageGraph
 
 def build_graph() -> MessageGraph:
     """Builds a simple LangGraph that generates course outlines."""
-    llm = ChatOpenAI(model="gpt-3.5-turbo")
+    llm = ChatOpenAI(model="gpt-4")
 
     def generate(messages: List) -> List:
         return [llm.invoke(messages)]
@@ -31,7 +31,7 @@ def main() -> None:
 
     prompt = (
         "Crie um curso sobre "
-        f"{topic} com tres modulos e tres aulas em cada modulo.\n"
+        f"{topic} com diversos módulos numerados iniciando em 1 e diversas aulas em cada modulo.\n"
         "Responda em JSON no formato: {\n  'modules': [\n"
         "    {'title': '...', 'lessons': ['...']}, ...]\n}"
     )
