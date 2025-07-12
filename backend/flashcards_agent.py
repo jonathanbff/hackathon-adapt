@@ -8,6 +8,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph.message import MessageGraph
 
+from course_content_agent import generate_course_content  # Import the function
+
 
 def build_graph() -> MessageGraph:
     """Builds a LangGraph that generates flashcards."""
@@ -25,7 +27,17 @@ def build_graph() -> MessageGraph:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        f"{content}\n"
+        print("Usage: python flashcards_agent.py 'Course topic'")
+        raise SystemExit(1)
+    topic = sys.argv[1]
+
+    # Generate course content first
+    course_content = generate_course_content(topic)
+    content_json = json.dumps(course_content, ensure_ascii=False, indent=2)
+
+    prompt = (
+        f"Com base no seguinte conteúdo de curso:\n{content_json}\n"
+        "Gere flashcards para cada módulo e aula. "
         "Responda em JSON no formato: {\n  'flashcards': [\n"
         "    {'question': '...', 'answer': '...'}, ...]\n}"
     )

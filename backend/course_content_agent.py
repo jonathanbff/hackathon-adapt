@@ -28,15 +28,22 @@ def generate_course_content(topic: str) -> dict:
     prompt = (
         "Crie um curso sobre "
         f"{topic} com diversos módulos numerados iniciando em 1 e diversas aulas em cada modulo.\n"
-        "Responda em JSON no formato: {\n  'modules': [\n"
-        "    {'title': '...', 'lessons': ['...']}, ...]\n}"
+        "Responda SOMENTE em JSON válido, usando aspas duplas, no formato: {\n  \"modules\": [\n"
+        "    {\"title\": \"...\", \"lessons\": [\"...\"]}, ...]\n}\n"
+        "Não inclua nenhuma explicação ou texto extra."
     )
 
     graph = build_graph()
     messages = [HumanMessage(content=prompt)]
     result = graph.invoke(messages)
     response = result[-1].content
-    return json.loads(response)
+
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        print("Erro ao decodificar JSON. Resposta recebida do modelo:")
+        print(response)
+        raise
 
 
 def main() -> None:
