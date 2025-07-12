@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from typing import List
 
@@ -31,15 +32,38 @@ def generate_flashcards(course_content: dict) -> dict:
     prompt = (
         f"Com base no seguinte conteúdo de curso:\n{content_json}\n"
         "Gere flashcards para cada módulo e aula. "
-        "Responda em JSON no formato: {\n  'flashcards': [\n"
-        "    {'question': '...', 'answer': '...'}, ...]\n}"
+        "Responda em JSON no formato: {\n  \"flashcards\": [\n"
+        "    {\"question\": \"...\", \"answer\": \"...\"}, ...]\n}"
     )
 
     graph = build_graph()
     messages = [HumanMessage(content=prompt)]
     result = graph.invoke(messages)
     response = result[-1].content
-    return json.loads(response)
+
+    # Extrai apenas o JSON da resposta
+    match = re.search(r"\{[\s\S]*\}", response)
+    if match:
+        response = match.group(0)
+
+    # Troca aspas simples por duplas
+    response = response.replace("'", '"')
+
+    # Escapa aspas duplas internas em valores de propriedades
+    def escape_inner_quotes(match):
+        value = match.group(0)
+        # Remove a aspa inicial e final, escapa as internas
+        return '"' + value[1:-1].replace('"', r'\"') + '"'
+
+    # Regex para encontrar valores de string JSON
+    response = re.sub(r'"([^"]*"(?:[^"]*"[^"]*")*)"', escape_inner_quotes, response)
+
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        print("Erro ao decodificar JSON. Resposta recebida do modelo:")
+        print(response)
+        raise
 
 
 def main() -> None:
