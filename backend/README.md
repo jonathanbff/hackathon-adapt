@@ -20,11 +20,7 @@ O script exibirá a estrutura do curso em formato JSON.
 
 ### Gerar flashcards
 
-```bash
-python flashcards_agent.py "Tema do curso"
-```
 
-O script utiliza o `course_content_agent.py` para gerar o conteúdo do curso e, em seguida, cria um conjunto de flashcards em JSON.
 
 ## Running
 cd frontend

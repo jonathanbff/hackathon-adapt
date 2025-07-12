@@ -10,7 +10,7 @@ from langgraph.graph.message import MessageGraph
 
 
 def build_graph() -> MessageGraph:
-    """Builds a LangGraph that generates flashcards."""
+    """Builds a LangGraph that generates quizzes."""
     llm = ChatOpenAI(model="gpt-4")
 
     def generate(messages: List) -> List:
@@ -25,9 +25,15 @@ def build_graph() -> MessageGraph:
 
 def main() -> None:
     if len(sys.argv) < 2:
+        print("Usage: python quizzes_agent.py 'Course content text'")
+        raise SystemExit(1)
+    content = sys.argv[1]
+
+    prompt = (
+        "Crie um quiz de múltipla escolha baseado no seguinte conteúdo:\n"
         f"{content}\n"
-        "Responda em JSON no formato: {\n  'flashcards': [\n"
-        "    {'question': '...', 'answer': '...'}, ...]\n}"
+        "Responda em JSON no formato: {\n  'questions': [\n"
+        "    {'question': '...', 'question_type': 'multiple-choice', 'options': ['...'], 'correct_answer': '...'}, ...]\n}"
     )
 
     graph = build_graph()
@@ -35,8 +41,8 @@ def main() -> None:
     result = graph.invoke(messages)
     response = result[-1].content
     try:
-        cards = json.loads(response)
-        print(json.dumps(cards, indent=2, ensure_ascii=False))
+        quiz = json.loads(response)
+        print(json.dumps(quiz, indent=2, ensure_ascii=False))
     except json.JSONDecodeError:
         print(response)
 

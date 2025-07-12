@@ -43,10 +43,10 @@ export const env = createEnv({
 	emptyStringAsUndefined: true,
 });
 
-// Set default values for environment variables
-if (!process.env.DATABASE_URL) {
-	process.env.DATABASE_URL = "";
-}
+// // Set default values for environment variables
+// if (!process.env.DATABASE_URL) {
+// 	process.env.DATABASE_URL = 'postgresql://neondb_owner:npg_YQlKM7yjFd5A@ep-curly-snowflake-aekpa8kv-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+// }
 
 // Do not assign to process.env.NODE_ENV as it may be read-only.
 // Instead, handle default in runtimeEnv or schema.
