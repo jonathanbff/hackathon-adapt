@@ -10,6 +10,7 @@ import {
   Settings,
   User2,
   Upload,
+  MessageSquare,
 } from "lucide-react"
 
 import {
@@ -37,6 +38,11 @@ const items = [
     title: "Home",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Chat",
+    url: "/chat",
+    icon: MessageSquare,
   },
   {
     title: "Inbox",

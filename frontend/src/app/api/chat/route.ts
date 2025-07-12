@@ -1,10 +1,12 @@
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { tools } from "~/server/tools";
+import { db } from "~/server/db";
+import { chatMessages } from "~/server/db/schemas";
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages, conversationId } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response("Invalid messages format", { status: 400 });
@@ -43,6 +45,20 @@ IMPORTANT FORMATTING:
       onChunk: (chunk) => {
         if (chunk.chunk.type === "tool-call") {
           console.log("Tool call:", chunk.chunk.toolName, chunk.chunk.args);
+        }
+      },
+      onFinish: async (result) => {
+        if (conversationId && result.text) {
+          try {
+            await db.insert(chatMessages).values({
+              conversationId,
+              role: "assistant",
+              content: result.text,
+              references: result.toolCalls?.map(tc => tc.toolName).join(", ") || null,
+            });
+          } catch (error) {
+            console.error("Error saving assistant message:", error);
+          }
         }
       },
     });
