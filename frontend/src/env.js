@@ -18,6 +18,7 @@ export const env = createEnv({
 		OPENAI_API_KEY: z.string(),
 		GROQ_API_KEY: z.string(),
 		TRIGGER_SECRET_KEY: z.string(),
+		SEARCHAPI_KEY: z.string(),
 	},
 
 	/**
@@ -43,6 +44,7 @@ export const env = createEnv({
 		OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 		GROQ_API_KEY: process.env.GROQ_API_KEY,
 		TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
+		SEARCHAPI_KEY: process.env.SEARCHAPI_KEY,
 		// NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
 	},
 	/**
