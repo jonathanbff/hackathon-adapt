@@ -1,7 +1,6 @@
 import { createTRPCRouter } from "~/server/api/trpc";
-import { getProfile, getAllUsers } from "./procedures";
+import { getProfile } from "./procedures";
 
 export const userRouter = createTRPCRouter({
   getProfile,
-  getAllUsers,
 }); 
