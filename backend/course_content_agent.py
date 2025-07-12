@@ -8,6 +8,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph import MessageGraph
 
+from flashcards_agent import generate_flashcards
+from quizzes_agent import generate_quiz
+
 
 def build_graph() -> MessageGraph:
     """Builds a simple LangGraph that generates course outlines."""
@@ -46,14 +49,33 @@ def generate_course_content(topic: str) -> dict:
         raise
 
 
+def generate_course_package(topic: str, output_file: str = "course_material.json") -> dict:
+    """Generate course content, flashcards and quiz and save them to a file."""
+    course_content = generate_course_content(topic)
+    flashcards = generate_flashcards(course_content)
+    content_json = json.dumps(course_content, ensure_ascii=False, indent=2)
+    quiz = generate_quiz(content_json)
+
+    package = {
+        "course_content": course_content,
+        "flashcards": flashcards,
+        "quiz": quiz,
+    }
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(package, f, ensure_ascii=False, indent=2)
+
+    return package
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: python course_content_agent.py 'Course topic'")
         raise SystemExit(1)
     topic = sys.argv[1]
 
-    outline = generate_course_content(topic)
-    print(json.dumps(outline, indent=2, ensure_ascii=False))
+    package = generate_course_package(topic)
+    print(json.dumps(package, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

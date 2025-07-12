@@ -23,12 +23,8 @@ def build_graph() -> MessageGraph:
     return builder.compile()
 
 
-def main() -> None:
-    if len(sys.argv) < 2:
-        print("Usage: python quizzes_agent.py 'Course content text'")
-        raise SystemExit(1)
-    content = sys.argv[1]
-
+def generate_quiz(content: str) -> dict:
+    """Generate a quiz based on the given course content."""
     prompt = (
         "Crie um quiz de múltipla escolha baseado no seguinte conteúdo:\n"
         f"{content}\n"
@@ -40,11 +36,21 @@ def main() -> None:
     messages = [HumanMessage(content=prompt)]
     result = graph.invoke(messages)
     response = result[-1].content
+    return json.loads(response)
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("Usage: python quizzes_agent.py 'Course content text'")
+        raise SystemExit(1)
+    content = sys.argv[1]
+
     try:
-        quiz = json.loads(response)
+        quiz = generate_quiz(content)
         print(json.dumps(quiz, indent=2, ensure_ascii=False))
-    except json.JSONDecodeError:
-        print(response)
+    except json.JSONDecodeError as exc:
+        # If the model returns invalid JSON, show the error message
+        print(str(exc))
 
 
 if __name__ == "__main__":
