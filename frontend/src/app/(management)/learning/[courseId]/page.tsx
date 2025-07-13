@@ -1,3 +1,4 @@
+import { AITeacherChat } from "~/components/ai-teacher-chat/ai-teacher-chat";
 import { LearningSpace } from "./learning-space";
 
 interface CoursePageProps {
@@ -8,5 +9,12 @@ interface CoursePageProps {
 
 export default async function LearningPage({ params }: CoursePageProps) {
   const { courseId } = await params;
-  return <LearningSpace courseId={courseId} />;
+
+  return (
+    <>
+      <LearningSpace courseId={courseId} />
+
+      <AITeacherChat />
+    </>
+  );
 }

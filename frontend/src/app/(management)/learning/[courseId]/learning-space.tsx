@@ -20,7 +20,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { AudioPlayer } from "~/components/ui/audio-player";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { AITeacherChat } from "~/components/ai-teacher-chat/ai-teacher-chat";
 
 export function LearningSpace({ courseId }: { courseId: string }) {
   const router = useRouter();
@@ -62,7 +61,7 @@ export function LearningSpace({ courseId }: { courseId: string }) {
             target_audience: "estudantes interessados no curso",
             format_style: "Conversa educacional entre especialista e mediador",
           }),
-        },
+        }
       );
 
       if (!response.ok) {
@@ -212,7 +211,7 @@ export function LearningSpace({ courseId }: { courseId: string }) {
               </div>
             </div>
 
-            <ScrollArea>
+            <ScrollArea className="h-[calc(100vh-200px)]">
               <ul className="divide-y divide-border">
                 {courseAndRelations?.modules.map((module) => (
                   <li
@@ -236,7 +235,7 @@ export function LearningSpace({ courseId }: { courseId: string }) {
                           }`}
                           onClick={() => {
                             const params = new URLSearchParams(
-                              searchParams.toString(),
+                              searchParams.toString()
                             );
                             params.set("lesson", lesson.id);
                             router.push(`?${params.toString()}`);
@@ -259,11 +258,11 @@ export function LearningSpace({ courseId }: { courseId: string }) {
             </ScrollArea>
           </div>
 
-          <div className="h-full aspect-video rounded-xl">
+          <div className="h-fullw-full rounded-xl">
             {selectedLesson ? (
               <Lesson lessonId={selectedLesson} courseId={courseId} />
             ) : (
-              <Skeleton className="h-full w-full aspect-video rounded-xl" />
+              <Skeleton className="h-full w-full rounded-xl" />
             )}
           </div>
         </div>

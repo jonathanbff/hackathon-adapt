@@ -4,7 +4,6 @@ import * as React from "react";
 import { useChatConversations } from "~/app/(chat)/chat/_components/use-chat-conversations";
 import { useChatMessages } from "~/app/(chat)/chat/_components/use-chat-messages";
 import { ConversationSidebar } from "~/app/(chat)/chat/_components/conversation-sidebar";
-import { ChatHeader } from "~/app/(chat)/chat/_components/chat-header";
 import { ChatMessages } from "~/app/(chat)/chat/_components/chat-messages";
 import { ChatInput } from "~/app/(chat)/chat/_components/chat-input";
 import { EmptyState } from "~/app/(chat)/chat/_components/empty-state";
@@ -15,10 +14,10 @@ interface ChatContainerProps {
   fullHeight?: boolean;
 }
 
-export function ChatContainer({ 
-  className = "", 
-  showSidebar = true, 
-  fullHeight = false 
+export function ChatContainer({
+  className = "",
+  showSidebar = true,
+  fullHeight = false,
 }: ChatContainerProps) {
   const {
     selectedConversationId,
@@ -85,9 +84,6 @@ export function ChatContainer({
       <div className="flex-1 flex flex-col">
         {selectedConversationId ? (
           <>
-            <ChatHeader
-              title={currentChat?.conversation?.title || "Loading..."}
-            />
             <ChatMessages
               messages={messages}
               isLoading={isLoading}
@@ -107,4 +103,4 @@ export function ChatContainer({
       </div>
     </div>
   );
-} 
+}

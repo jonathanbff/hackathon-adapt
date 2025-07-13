@@ -47,7 +47,7 @@ export function Lesson({
   console.log("quizzes", quizContents);
 
   return (
-    <div className="h-full w-full aspect-video rounded-xl bg-background border border-border border-b-0">
+    <div className="h-full w-full rounded-xl bg-background border border-border border-b-0">
       <Tabs defaultValue="text" className="w-full">
         <TabsList className="grid w-full grid-cols-5 bg-muted/30">
           {!!textContents.length && (
