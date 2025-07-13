@@ -1,8 +1,8 @@
 import { logger, schemaTask, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { db } from "~/server/db/connection";
-import { youtubeVideos, contentItems } from "~/server/db/schemas";
-import { env } from "~/env";
+import { db } from "../../db/connection";
+import { youtubeVideos, contentItems } from "../../db/schemas";
+import { env } from "../../../env";
 import { eq } from "drizzle-orm";
 
 const videoSearchResultSchema = z.object({

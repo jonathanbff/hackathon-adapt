@@ -1,7 +1,7 @@
 import { logger, schemaTask, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { db } from "~/server/db/connection";
-import { courses, modules, lessons } from "~/server/db/schemas";
+import { db } from "../../db/connection";
+import { courses, modules, lessons } from "../../db/schemas";
 import { eq } from "drizzle-orm";
 import { generateLessonBatchTask } from "./generate-lesson-batch";
 

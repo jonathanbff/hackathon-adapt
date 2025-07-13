@@ -7,8 +7,8 @@ import { parsePdfToMarkdownTask } from "./02-parse-pdf-to-markdown";
 import { storeMarkdownBlobTask } from "./03-store-markdown-blob";
 import { extractMetadataLayoutTask } from "./04-extract-metadata-layout";
 import { splitAndVectorizeTask } from "./05-split-and-vectorize";
-import { db } from "~/server/db/connection";
-import { documents } from "~/server/db/schemas/assets";
+import { db } from "../../db/connection";
+import { documents } from "../../db/schemas/assets";
 import { eq } from "drizzle-orm";
 
 export const mainIngestionTask = schemaTask({

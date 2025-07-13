@@ -1,7 +1,7 @@
 import { logger, schemaTask } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { db } from "~/server/db/connection";
-import { courses } from "~/server/db/schemas";
+import { db } from "../../db/connection";
+import { courses } from "../../db/schemas";
 import { eq } from "drizzle-orm";
 
 export const finalizeCourseTask = schemaTask({
