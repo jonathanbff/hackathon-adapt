@@ -1,7 +1,17 @@
 import { logger, schemaTask, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import { db } from "../../db/connection";
-import { contentItems, articles, quizzes, quizQuestions, examples, lessons as lessonsTable, modules, youtubeVideos } from "../../db/schemas";
+import {
+  contentItems,
+  articles,
+  quizzes,
+  quizQuestions,
+  examples,
+  lessons as lessonsTable,
+  modules,
+  youtubeVideos,
+  flashcards,
+} from "../../db/schemas";
 import { generateObject } from "ai";
 import { groq } from "@ai-sdk/groq";
 import { eq } from "drizzle-orm";
@@ -11,25 +21,35 @@ const lessonContentSchema = z.object({
   summary: z.string().describe("Comprehensive lesson summary"),
   content: z.string().describe("Detailed lesson content in markdown"),
   keyTopics: z.array(z.string()).describe("Key topics covered in the lesson"),
-  learningObjectives: z.array(z.string()).describe("Learning objectives for the lesson"),
+  learningObjectives: z
+    .array(z.string())
+    .describe("Learning objectives for the lesson"),
   quiz: z.object({
     title: z.string(),
-    questions: z.array(z.object({
-      question: z.string(),
-      questionType: z.enum(['multiple_choice', 'true_false', 'short_answer']),
-      options: z.array(z.string()).optional(),
-      correctAnswer: z.string(),
-    }))
+    questions: z.array(
+      z.object({
+        question: z.string(),
+        questionType: z.enum(["multiple_choice", "true_false", "short_answer"]),
+        options: z.array(z.string()).optional(),
+        correctAnswer: z.string(),
+      }),
+    ),
   }),
-  examples: z.array(z.object({
-    title: z.string(),
-    content: z.string(),
-    type: z.enum(['practical', 'theoretical', 'real_world']),
-  }))
+  examples: z.array(
+    z.object({
+      title: z.string(),
+      content: z.string(),
+      type: z.enum(["practical", "theoretical", "real_world"]),
+    }),
+  ),
 });
 
 // Video search function
-async function searchVideoForLesson(lesson: any, moduleContext: any, courseSettings: any) {
+async function searchVideoForLesson(
+  lesson: any,
+  moduleContext: any,
+  courseSettings: any,
+) {
   const searchQuery = `${lesson.title} ${moduleContext.title} ${courseSettings.userProfileContext.learningArea} ${courseSettings.difficulty} tutorial`;
 
   try {
@@ -46,12 +66,15 @@ async function searchVideoForLesson(lesson: any, moduleContext: any, courseSetti
       api_key: env.SEARCHAPI_KEY || "",
     });
 
-    const response = await fetch(`https://www.searchapi.io/api/v1/search?${params.toString()}`, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json",
+    const response = await fetch(
+      `https://www.searchapi.io/api/v1/search?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`YouTube search API returned ${response.status}`);
@@ -77,27 +100,27 @@ async function searchVideoForLesson(lesson: any, moduleContext: any, courseSetti
     // Helper function to parse relative time from YouTube API
     const parseRelativeTime = (timeString: string): Date => {
       if (!timeString) return new Date();
-      
+
       const now = new Date();
       const lowerTime = timeString.toLowerCase();
-      
-      if (lowerTime.includes('hour')) {
-        const hours = parseInt(lowerTime.match(/\d+/)?.[0] || '0');
+
+      if (lowerTime.includes("hour")) {
+        const hours = parseInt(lowerTime.match(/\d+/)?.[0] || "0");
         return new Date(now.getTime() - hours * 60 * 60 * 1000);
-      } else if (lowerTime.includes('day')) {
-        const days = parseInt(lowerTime.match(/\d+/)?.[0] || '0');
+      } else if (lowerTime.includes("day")) {
+        const days = parseInt(lowerTime.match(/\d+/)?.[0] || "0");
         return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-      } else if (lowerTime.includes('week')) {
-        const weeks = parseInt(lowerTime.match(/\d+/)?.[0] || '0');
+      } else if (lowerTime.includes("week")) {
+        const weeks = parseInt(lowerTime.match(/\d+/)?.[0] || "0");
         return new Date(now.getTime() - weeks * 7 * 24 * 60 * 60 * 1000);
-      } else if (lowerTime.includes('month')) {
-        const months = parseInt(lowerTime.match(/\d+/)?.[0] || '0');
+      } else if (lowerTime.includes("month")) {
+        const months = parseInt(lowerTime.match(/\d+/)?.[0] || "0");
         return new Date(now.getTime() - months * 30 * 24 * 60 * 60 * 1000);
-      } else if (lowerTime.includes('year')) {
-        const years = parseInt(lowerTime.match(/\d+/)?.[0] || '0');
+      } else if (lowerTime.includes("year")) {
+        const years = parseInt(lowerTime.match(/\d+/)?.[0] || "0");
         return new Date(now.getTime() - years * 365 * 24 * 60 * 60 * 1000);
       }
-      
+
       // If it's a standard date format, try to parse it
       const parsed = new Date(timeString);
       return isNaN(parsed.getTime()) ? new Date() : parsed;
@@ -111,7 +134,8 @@ async function searchVideoForLesson(lesson: any, moduleContext: any, courseSetti
       duration: topVideo.length || "",
       views: topVideo.extracted_views || 0,
       publishedAt: parseRelativeTime(topVideo.published_time || ""),
-      thumbnailUrl: topVideo.thumbnail?.static || topVideo.thumbnail?.rich || "",
+      thumbnailUrl:
+        topVideo.thumbnail?.static || topVideo.thumbnail?.rich || "",
       metadata: {
         searchQuery,
         lessonId: lesson.id,
@@ -168,9 +192,9 @@ async function searchVideoForLesson(lesson: any, moduleContext: any, courseSetti
       contentItemId: videoContentItem.id,
       searchQuery,
     };
-
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return {
       videoAttached: false,
       error: errorMessage,
@@ -183,42 +207,47 @@ export const generateLessonBatchTask = schemaTask({
   schema: z.object({
     userId: z.string(),
     courseId: z.string().uuid(),
-    lessons: z.array(z.object({
-      id: z.string().uuid(),
-      title: z.string(),
-      description: z.string(),
-      orderIndex: z.number(),
-    })),
+    lessons: z.array(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string(),
+        description: z.string(),
+        orderIndex: z.number(),
+      }),
+    ),
     moduleContext: z.object({
       title: z.string(),
       description: z.string(),
     }),
-          courseSettings: z.object({
-        title: z.string(),
-        difficulty: z.string(),
-        format: z.array(z.string()).optional(),
-        userProfileContext: z.object({
-          learningArea: z.string(),
-          learningStyle: z.string(),
-          currentLevel: z.string(),
-        }),
-        aiPreferences: z.object({
-          tone: z.string(),
-          examples: z.string(),
-          pacing: z.string(),
-        }),
+    courseSettings: z.object({
+      title: z.string(),
+      difficulty: z.string(),
+      format: z.array(z.string()).optional(),
+      userProfileContext: z.object({
+        learningArea: z.string(),
+        learningStyle: z.string(),
+        currentLevel: z.string(),
       }),
+      aiPreferences: z.object({
+        tone: z.string(),
+        examples: z.string(),
+        pacing: z.string(),
+      }),
+    }),
   }),
   retry: {
     maxAttempts: 3,
   },
   run: async ({ userId, courseId, lessons, moduleContext, courseSettings }) => {
-    logger.log("Starting comprehensive lesson generation (content + videos + quizzes + examples)", {
-      userId,
-      courseId,
-      lessonsCount: lessons.length,
-      moduleTitle: moduleContext.title,
-    });
+    logger.log(
+      "Starting comprehensive lesson generation (content + videos + quizzes + examples + flashcards)",
+      {
+        userId,
+        courseId,
+        lessonsCount: lessons.length,
+        moduleTitle: moduleContext.title,
+      },
+    );
 
     const generatedLessons = [];
 
@@ -271,8 +300,12 @@ Make the content engaging, educational, and appropriate for the specified learni
           lessonTitle: lesson.title,
         });
 
-        const videoResult = await searchVideoForLesson(lesson, moduleContext, courseSettings);
-        
+        const videoResult = await searchVideoForLesson(
+          lesson,
+          moduleContext,
+          courseSettings,
+        );
+
         if (videoResult.error) {
           logger.warn("Video search failed", {
             lessonId: lesson.id,
@@ -293,7 +326,9 @@ Make the content engaging, educational, and appropriate for the specified learni
           .returning();
 
         if (!contentItem) {
-          throw new Error(`Failed to create content item for lesson ${lesson.title}`);
+          throw new Error(
+            `Failed to create content item for lesson ${lesson.title}`,
+          );
         }
 
         // Step 3: Create the article content
@@ -323,12 +358,17 @@ Make the content engaging, educational, and appropriate for the specified learni
 
         if (quiz) {
           // Step 5: Create quiz questions
-          for (const [index, question] of lessonContent.quiz.questions.entries()) {
+          for (const [
+            index,
+            question,
+          ] of lessonContent.quiz.questions.entries()) {
             await db.insert(quizQuestions).values({
               quizId: quiz.id,
               question: question.question,
               questionType: question.questionType,
-              options: question.options ? JSON.stringify(question.options) : null,
+              options: question.options
+                ? JSON.stringify(question.options)
+                : null,
               correctAnswer: question.correctAnswer,
               orderIndex: index + 1,
             });
@@ -346,7 +386,92 @@ Make the content engaging, educational, and appropriate for the specified learni
           });
         }
 
-        // Step 7: Mark lesson as generated
+        // Step 7: Generate flashcards using Modal API
+        let flashcardsGenerated = 0;
+        try {
+          logger.log("Generating flashcards for lesson", {
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+          });
+
+          const courseContent = {
+            title: lesson.title,
+            introduction: lessonContent.summary,
+            mainContent: lessonContent.content,
+            keyPoints: lessonContent.keyTopics,
+            practicalExercises: [],
+            summary: lessonContent.summary,
+            furtherReading: [],
+          };
+
+          const modalResponse = await fetch(
+            "https://davisuga-chief--edu-one-generate-flashcards.modal.run",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                course_content: courseContent,
+              }),
+            },
+          );
+
+          if (modalResponse.ok) {
+            const modalData = await modalResponse.json();
+
+            if (modalData.flashcards && Array.isArray(modalData.flashcards)) {
+              const validFlashcards = [];
+
+              for (const card of modalData.flashcards) {
+                try {
+                  let frontContent, backContent;
+
+                  if (typeof card === "object" && card !== null) {
+                    frontContent =
+                      card.front || card.question || card.frontContent || "";
+                    backContent =
+                      card.back || card.answer || card.backContent || "";
+                  } else {
+                    continue;
+                  }
+
+                  if (frontContent && backContent) {
+                    validFlashcards.push({
+                      frontContent: String(frontContent).trim(),
+                      backContent: String(backContent).trim(),
+                    });
+                  }
+                } catch (error) {
+                  logger.warn("Failed to parse flashcard", { card, error });
+                }
+              }
+
+              if (validFlashcards.length > 0) {
+                await db.insert(flashcards).values(
+                  validFlashcards.map((card) => ({
+                    contentItemId: contentItem.id,
+                    frontContent: card.frontContent,
+                    backContent: card.backContent,
+                  })),
+                );
+                flashcardsGenerated = validFlashcards.length;
+              }
+            }
+          } else {
+            logger.warn("Modal API failed for flashcards", {
+              lessonId: lesson.id,
+              status: modalResponse.status,
+            });
+          }
+        } catch (error) {
+          logger.warn("Flashcard generation failed", {
+            lessonId: lesson.id,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+
+        // Step 8: Mark lesson as generated
         await db
           .update(lessonsTable)
           .set({
@@ -365,6 +490,7 @@ Make the content engaging, educational, and appropriate for the specified learni
           keyTopics: lessonContent.keyTopics,
           examplesCount: lessonContent.examples.length,
           questionsCount: lessonContent.quiz.questions.length,
+          flashcardsCount: flashcardsGenerated,
           videoAttached: videoResult.videoAttached,
           videoTitle: videoResult.videoTitle || null,
           videoId: videoResult.videoId || null,
@@ -375,10 +501,10 @@ Make the content engaging, educational, and appropriate for the specified learni
           contentItemId: contentItem.id,
           examplesCount: lessonContent.examples.length,
           questionsCount: lessonContent.quiz.questions.length,
+          flashcardsCount: flashcardsGenerated,
           videoAttached: videoResult.videoAttached,
           videoTitle: videoResult.videoTitle || "No video",
         });
-
       } catch (error) {
         logger.error("Failed to generate lesson", {
           lessonId: lesson.id,
@@ -388,9 +514,21 @@ Make the content engaging, educational, and appropriate for the specified learni
       }
     }
 
-    const videosAttached = generatedLessons.filter(lesson => lesson.videoAttached).length;
-    const totalQuestions = generatedLessons.reduce((sum, lesson) => sum + lesson.questionsCount, 0);
-    const totalExamples = generatedLessons.reduce((sum, lesson) => sum + lesson.examplesCount, 0);
+    const videosAttached = generatedLessons.filter(
+      (lesson) => lesson.videoAttached,
+    ).length;
+    const totalQuestions = generatedLessons.reduce(
+      (sum, lesson) => sum + lesson.questionsCount,
+      0,
+    );
+    const totalExamples = generatedLessons.reduce(
+      (sum, lesson) => sum + lesson.examplesCount,
+      0,
+    );
+    const totalFlashcards = generatedLessons.reduce(
+      (sum, lesson) => sum + lesson.flashcardsCount,
+      0,
+    );
 
     logger.log("Comprehensive lesson generation completed", {
       userId,
@@ -399,6 +537,7 @@ Make the content engaging, educational, and appropriate for the specified learni
       videosAttached,
       totalQuestions,
       totalExamples,
+      totalFlashcards,
     });
 
     return {
@@ -408,6 +547,7 @@ Make the content engaging, educational, and appropriate for the specified learni
       videosAttached,
       totalQuestions,
       totalExamples,
+      totalFlashcards,
     };
   },
-}); 
+});

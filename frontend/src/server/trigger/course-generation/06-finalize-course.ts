@@ -23,9 +23,9 @@ export const finalizeCourseTask = schemaTask({
               id: z.string().uuid(),
               title: z.string(),
               description: z.string(),
-            })
+            }),
           ),
-        })
+        }),
       ),
     }),
     courseSettings: z.any(),
@@ -33,27 +33,31 @@ export const finalizeCourseTask = schemaTask({
     videoResults: z.array(z.any()).optional(),
     quizResults: z.array(z.any()).optional(),
     exampleResults: z.array(z.any()).optional(),
+    flashcardResults: z.array(z.any()).optional(),
     failedLessons: z.array(z.any()).optional(),
     failedVideos: z.array(z.any()).optional(),
     failedQuizzes: z.array(z.any()).optional(),
     failedExamples: z.array(z.any()).optional(),
+    failedFlashcards: z.array(z.any()).optional(),
   }),
   retry: {
     maxAttempts: 3,
   },
-  run: async ({ 
-    userId, 
-    courseId, 
-    courseStructure, 
+  run: async ({
+    userId,
+    courseId,
+    courseStructure,
     courseSettings,
     contentResults,
     videoResults,
     quizResults,
     exampleResults,
+    flashcardResults,
     failedLessons,
     failedVideos,
     failedQuizzes,
-    failedExamples
+    failedExamples,
+    failedFlashcards,
   }) => {
     logger.log("Finalizing course generation", {
       userId,
@@ -61,18 +65,34 @@ export const finalizeCourseTask = schemaTask({
       title: courseStructure.title,
     });
 
-    const totalLessons = courseStructure.modules.reduce((sum, module) => sum + module.lessons.length, 0);
+    const totalLessons = courseStructure.modules.reduce(
+      (sum, module) => sum + module.lessons.length,
+      0,
+    );
     const successfulContent = contentResults?.length || 0;
-    const videosAttached = videoResults?.filter(result => result.videoAttached).length || 0;
-    const quizzesGenerated = quizResults?.filter(result => result.quizGenerated).length || 0;
-    const examplesGenerated = exampleResults?.reduce((sum, result) => sum + result.examplesCount, 0) || 0;
+    const videosAttached =
+      videoResults?.filter((result) => result.videoAttached).length || 0;
+    const quizzesGenerated =
+      quizResults?.filter((result) => result.quizGenerated).length || 0;
+    const examplesGenerated =
+      exampleResults?.reduce((sum, result) => sum + result.examplesCount, 0) ||
+      0;
+    const flashcardsGenerated =
+      flashcardResults?.reduce(
+        (sum, result) => sum + (result.flashcardsCount || 0),
+        0,
+      ) || 0;
 
-    const totalFailed = (failedLessons?.length || 0) + 
-                       (failedVideos?.length || 0) + 
-                       (failedQuizzes?.length || 0) + 
-                       (failedExamples?.length || 0);
+    const totalFailed =
+      (failedLessons?.length || 0) +
+      (failedVideos?.length || 0) +
+      (failedQuizzes?.length || 0) +
+      (failedExamples?.length || 0) +
+      (failedFlashcards?.length || 0);
 
-    const completionPercentage = Math.round((successfulContent / totalLessons) * 100);
+    const completionPercentage = Math.round(
+      (successfulContent / totalLessons) * 100,
+    );
 
     await db
       .update(courses)
@@ -88,6 +108,7 @@ export const finalizeCourseTask = schemaTask({
       videosAttached,
       quizzesGenerated,
       examplesGenerated,
+      flashcardsGenerated,
       totalFailed,
       completionPercentage,
       failedBreakdown: {
@@ -95,6 +116,7 @@ export const finalizeCourseTask = schemaTask({
         failedVideos: failedVideos?.length || 0,
         failedQuizzes: failedQuizzes?.length || 0,
         failedExamples: failedExamples?.length || 0,
+        failedFlashcards: failedFlashcards?.length || 0,
       },
     };
 
@@ -115,4 +137,4 @@ export const finalizeCourseTask = schemaTask({
       generationSummary,
     };
   },
-}); 
+});
