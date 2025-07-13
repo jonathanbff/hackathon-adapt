@@ -24,11 +24,15 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (user) {
-      const onboardingStatus = (user.publicMetadata as { onboardingStatus?: string })?.onboardingStatus;
-      
+      const onboardingStatus = (
+        user.publicMetadata as { onboardingStatus?: string }
+      )?.onboardingStatus;
+
       if (onboardingStatus === ONBOARDING_STATUS.COMPLETED) {
-        console.log("[ONBOARDING] User has already completed onboarding, redirecting to dashboard");
-        router.push("/dashboard");
+        console.log(
+          "[ONBOARDING] User has already completed onboarding, redirecting to dashboard",
+        );
+        router.push("/courses");
       }
     }
   }, [user, router]);
@@ -47,15 +51,19 @@ export default function OnboardingPage() {
     );
   }
 
-  const onboardingStatus = (user.publicMetadata as { onboardingStatus?: string })?.onboardingStatus;
-  
+  const onboardingStatus = (
+    user.publicMetadata as { onboardingStatus?: string }
+  )?.onboardingStatus;
+
   if (onboardingStatus === ONBOARDING_STATUS.COMPLETED) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-6">
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">Redirecting to dashboard...</p>
+              <p className="text-sm text-muted-foreground">
+                Redirecting to dashboard...
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -67,7 +75,7 @@ export default function OnboardingPage() {
     try {
       await syncUserMutation.mutateAsync();
       await completeOnboardingMutation.mutateAsync();
-      router.push("/dashboard");
+      router.push("/courses");
     } catch (error) {
       console.error("Error completing onboarding:", error);
     }
