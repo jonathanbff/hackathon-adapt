@@ -8,7 +8,7 @@ import { useUser } from "~/hooks/use-user";
 import { api } from "~/trpc/react";
 import { TavusAPI } from "~/components/video-agent/tavus";
 import type { ConversationResponse, ConversationRequest } from "~/types/tavus";
-
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const VideoChat = () => {
   const params = useParams<{ courseId: string }>();
   const { courseId: course } = params;
@@ -31,7 +31,7 @@ export const VideoChat = () => {
 
   const apiKey = process.env.NEXT_PUBLIC_TAVUS_API_KEY;
 
-  const createConversation = async () => {
+  const createConversation = async (retried = 0) => {
     if (!apiKey) {
       setError("API key not configured");
       return;
@@ -197,12 +197,25 @@ How can I help you today?`,
         };
       }
 
+      const promises =
+        (await tavusAPI.listConversations()).conversations?.map(
+          ({ conversation_id }) => tavusAPI.endConversation(conversation_id),
+        ) || [];
+      for await (const promise of promises) {
+        await promise;
+      }
+
       const newConversation = await tavusAPI.createConversation(request);
       setConversation(newConversation);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Error creating conversation",
-      );
+      if (retried < 3) {
+        await sleep(1000);
+        await createConversation(retried + 1);
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Error creating conversation",
+        );
+      }
     } finally {
       setLoading(false);
     }

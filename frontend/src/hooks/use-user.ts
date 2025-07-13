@@ -1,5 +1,5 @@
-import { useUser as useClerkUser } from "@clerk/clerk-react";
+import { api } from "~/trpc/react";
 export const useUser = () => {
-  const clerkuser = useClerkUser();
-  return { ...clerkuser, id: clerkuser.user?.externalId };
+  const { data: dbUser } = api.user.getProfile.useQuery();
+  return { ...dbUser, id: dbUser?.id };
 };
