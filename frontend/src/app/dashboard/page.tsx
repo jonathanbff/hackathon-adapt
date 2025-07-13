@@ -2,8 +2,8 @@
 
 import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
-import { AuthGuard } from "~/components/auth";
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -23,9 +23,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <AuthGuard />
         </div>
         
         <div className="grid gap-6 md:grid-cols-2">
@@ -34,24 +33,30 @@ export default function DashboardPage() {
               <CardTitle>User Profile</CardTitle>
               <CardDescription>Your account information</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Name:</span>
-                <span className="text-sm">{userProfile?.name || "Not set"}</span>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{userProfile?.name || user?.fullName || "Not set"}</p>
+                  <p className="text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Email:</span>
-                <span className="text-sm">{userProfile?.email || "Not set"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Username:</span>
-                <span className="text-sm">{userProfile?.username || "Not set"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Onboarding:</span>
-                <span className="text-sm">
-                  {userProfile?.onboardingCompleted ? "Completed" : "Pending"}
-                </span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Username:</span>
+                  <span className="text-sm">{userProfile?.username || "Not set"}</span>
+                                                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Onboarding:</span>
+                  <span className="text-sm">
+                    {userProfile?.onboardingCompleted ? "Completed" : "Pending"}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
