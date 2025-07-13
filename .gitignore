@@ -1,0 +1,5 @@
+hacka-venv/
+.env
+frontend/start-database.sh
+frontend/src/env.js
+backend/__pycache__/

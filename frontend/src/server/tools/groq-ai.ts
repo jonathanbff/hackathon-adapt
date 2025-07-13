@@ -9,7 +9,7 @@ const groq = createOpenAI({
 });
 
 const GROQ_MODELS = {
-  FAST: "llama-3.1-70b-versatile",
+  FAST: "meta-llama/llama-4-scout-17b-16e-instruct",
   ULTRA_FAST: "llama-3.1-8b-instant",
   REASONING: "llama-3.2-90b-text-preview",
 } as const;
@@ -61,7 +61,7 @@ export async function generateTextContent(
     model = "FAST",
     temperature = 0.7,
     maxTokens = 8000,
-    systemPrompt = "You are an expert educational content creator. Generate high-quality, accurate, and engaging educational content.",
+    systemPrompt = "You are an expert educational content creator. Generate high-quality, accurate, and engaging educational content use json for structured output.",
   } = options;
 
   try {
