@@ -1,12 +1,15 @@
 "use client";
 
 import { RiAddLine, RiGitRepositoryLine } from "@remixicon/react";
+import { useRouter } from "next/navigation";
 
-import { CoursesCatalog } from "./courses-catalog";
+import { CoursesCatalog } from "~/components/courses/courses-catalog";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 
-export default function ManagementPage() {
+export default function CoursesPage() {
+  const router = useRouter();
+
   const {
     data: courses,
     isLoading,
@@ -32,7 +35,7 @@ export default function ManagementPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button>
+              <Button onClick={() => router.push("/courses/new")}>
                 Criar novo curso
                 <RiAddLine className="ml-2 size-5" />
               </Button>
@@ -67,7 +70,7 @@ export default function ManagementPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button>
+              <Button onClick={() => router.push("/courses/new")}>
                 Criar novo curso
                 <RiAddLine className="ml-2 size-5" />
               </Button>
@@ -105,7 +108,7 @@ export default function ManagementPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button>
+            <Button onClick={() => router.push("/courses/new")}>
               Criar novo curso
               <RiAddLine className="ml-2 size-5" />
             </Button>

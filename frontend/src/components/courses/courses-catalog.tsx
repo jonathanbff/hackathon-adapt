@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { CourseCard } from "./course-card";
+import { CourseCard } from "~/components/courses/course-card";
 
 export function CoursesCatalog({ courses }: { courses: Course[] }) {
   const [searchTerm, setSearchTerm] = useState("");
