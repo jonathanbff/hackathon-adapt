@@ -3,46 +3,50 @@
     {
       "title": "Módulo 1: Introdução às Redes Neurais",
       "lessons": [
-        "Aula 1: O que é uma Rede Neural?",
-        "Aula 2: História e Evolução das Redes Neurais",
-        "Aula 3: Aplicações práticas de Redes Neurais",
-        "Aula 4: Tipos de Redes Neurais"
+        "Aula 1: O que são Redes Neurais",
+        "Aula 2: História das Redes Neurais",
+        "Aula 3: Aplicações de Redes Neurais"
       ]
     },
     {
-      "title": "Módulo 2: Fundamentos de Redes Neurais",
+      "title": "Módulo 2: Arquitetura de Redes Neurais",
       "lessons": [
-        "Aula 1: Neurônios e Perceptrons",
-        "Aula 2: Funções de Ativação",
-        "Aula 3: Redes Neurais Feedforward",
-        "Aula 4: Backpropagation"
+        "Aula 1: Perceptrons",
+        "Aula 2: Redes Feedforward",
+        "Aula 3: Redes Recorrentes"
       ]
     },
     {
-      "title": "Módulo 3: Redes Neurais Convolucionais",
+      "title": "Módulo 3: Algoritmos de Aprendizado",
       "lessons": [
-        "Aula 1: Introdução às Redes Neurais Convolucionais",
-        "Aula 2: Convolution e Pooling",
-        "Aula 3: Dropout e Normalização",
-        "Aula 4: Implementação de uma Rede Neural Convolucional"
+        "Aula 1: Backpropagation",
+        "Aula 2: Stochastic Gradient Descent",
+        "Aula 3: Regularização"
       ]
     },
     {
-      "title": "Módulo 4: Redes Neurais Recurrentes",
+      "title": "Módulo 4: Redes Neurais Convolucionais e Recorrentes",
       "lessons": [
-        "Aula 1: Introdução às Redes Neurais Recorrentes",
-        "Aula 2: Long Short-Term Memory (LSTM)",
-        "Aula 3: Gated Recurrent Unit (GRU)",
-        "Aula 4: Implementação de uma Rede Neural Recorrente"
+        "Aula 1: CNNs, Pooling e Convolução",
+        "Aula 2: RNNs e LSTM",
+        "Aula 3: Transferência de Aprendizado"
       ]
     },
     {
-      "title": "Módulo 5: Deep Learning Prático",
+      "title": "Módulo 5: Práticas de Treinamento de Redes Neurais",
       "lessons": [
-        "Aula 1: Ferramentas e Bibliotecas",
-        "Aula 2: Treinamento e Avaliação de Modelos",
-        "Aula 3: Fine-Tuning e Transfer Learning",
-        "Aula 4: Projeto Prático Final"
+        "Aula 1: Configurando a Rede Neural",
+        "Aula 2: Normalização de Dados",
+        "Aula 3: Overfitting e Underfitting",
+        "Aula 4: Avaliação de Desempenho da Rede Neural"
+      ]
+    },
+    {
+      "title": "Módulo 6: Redes Neurais no Cotidiano",
+      "lessons": [
+        "Aula 1: Redes Neurais em Sistemas de Recomendação",
+        "Aula 2: Redes Neurais em Reconhecimento de Imagem",
+        "Aula 3: Redes Neurais em Carros Autônomos"
       ]
     }
   ]
