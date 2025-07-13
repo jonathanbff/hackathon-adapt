@@ -93,21 +93,17 @@ export const coursesRouter = createTRPCRouter({
       .orderBy(desc(courses.createdAt));
 
     // Transform database courses to match the expected Course type
-    return coursesData.map((course, index) => ({
-      id: index, // Using index as number ID for compatibility
+    return coursesData.map((course) => ({
+      id: course.id,
       title: course.title,
       description: course.description || "",
-      instructor: "EDUONE IA", // Default instructor
-      rating: 4.8, // Default rating
-      students: Math.floor(Math.random() * 2000) + 100, // Random student count
-      duration: "4-8 semanas", // Default duration
-      level: "Intermediário", // Default level
-      category: "Tecnologia", // Default category
-      tags: ["IA", "Educação"], // Default tags
-      image: `https://images.unsplash.com/photo-${
-        1555255707 + index
-      }?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80`, // Generated image URL
-      // Optional fields for enrolled courses
+      instructor: "EDUONE IA",
+      rating: 0,
+      students: 0,
+      duration: "4-8 semanas",
+      level: "Intermediário",
+      category: "Tecnologia",
+      tags: ["IA", "Educação"],
       startedAt: undefined,
       progress: undefined,
     }));
@@ -540,5 +536,37 @@ export const coursesRouter = createTRPCRouter({
         );
 
       return progress;
+    }),
+
+  getCourseById: publicProcedure
+    .input(z.object({ courseId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const course = await ctx.db
+        .select()
+        .from(courses)
+        .where(eq(courses.id, input.courseId))
+        .limit(1);
+
+      if (!course[0]) {
+        throw new Error("Course not found");
+      }
+
+      return course[0];
+    }),
+
+  getUserCourseById: publicProcedure
+    .input(z.object({ courseId: z.string(), userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const course = await ctx.db
+        .select()
+        .from(courses)
+        .where(eq(courses.id, input.courseId))
+        .limit(1);
+
+      if (!course[0]) {
+        throw new Error("Course not found");
+      }
+
+      return course[0];
     }),
 });
