@@ -1,7 +1,12 @@
 import { logger, schemaTask, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import { db } from "../../db/connection";
-import { courses, modules, lessons, courseGenerationRequests } from "../../db/schemas";
+import {
+  courses,
+  modules,
+  lessons,
+  courseGenerationRequests,
+} from "../../db/schemas";
 import { eq } from "drizzle-orm";
 import { generateLessonBatchTask } from "./generate-lesson-batch";
 import { validateGenerationRequestTask } from "./00-validate-generation-request";
@@ -14,7 +19,9 @@ export const generateEntireCourseTask = schemaTask({
     userId: z.string(),
     title: z.string(),
     description: z.string().optional(),
-    difficulty: z.enum(["beginner", "intermediate", "advanced"]).default("beginner"),
+    difficulty: z
+      .enum(["beginner", "intermediate", "advanced"])
+      .default("beginner"),
     duration: z.string().default("4 weeks"),
     goals: z.array(z.string()).default([]),
     learningArea: z.string().default("technology"),
@@ -26,18 +33,18 @@ export const generateEntireCourseTask = schemaTask({
   retry: {
     maxAttempts: 3,
   },
-  run: async ({ 
-    userId, 
-    title, 
-    description, 
-    difficulty, 
-    duration, 
-    goals, 
-    learningArea, 
-    learningStyle, 
+  run: async ({
+    userId,
+    title,
+    description,
+    difficulty,
+    duration,
+    goals,
+    learningArea,
+    learningStyle,
     currentLevel,
     moduleCount,
-    lessonsPerModule 
+    lessonsPerModule,
   }) => {
     logger.log("Starting complete course generation", {
       userId,
@@ -72,7 +79,7 @@ export const generateEntireCourseTask = schemaTask({
         {
           userId,
           generationRequest,
-        }
+        },
       );
 
       if (!validationResult.ok) {
@@ -90,11 +97,13 @@ export const generateEntireCourseTask = schemaTask({
         {
           userId,
           courseSettings,
-        }
+        },
       );
 
       if (!structureResult.ok) {
-        throw new Error(`Course structure creation failed: ${structureResult.error}`);
+        throw new Error(
+          `Course structure creation failed: ${structureResult.error}`,
+        );
       }
 
       const courseStructure = structureResult.output.courseStructure;
@@ -106,10 +115,10 @@ export const generateEntireCourseTask = schemaTask({
 
       logger.log("Step 3: Generating all modules with lessons");
       const moduleResults = [];
-      
+
       for (const module of courseStructure.modules) {
         logger.log(`Generating lessons for module: ${module.title}`);
-        
+
         const lessonBatchResult = await tasks.triggerAndWait(
           "course-generation.generate-lesson-batch",
           {
@@ -127,11 +136,13 @@ export const generateEntireCourseTask = schemaTask({
               userProfileContext: courseSettings.userProfileContext,
               aiPreferences: courseSettings.aiPreferences,
             },
-          }
+          },
         );
 
         if (!lessonBatchResult.ok) {
-          throw new Error(`Lesson generation failed for module ${module.title}: ${lessonBatchResult.error}`);
+          throw new Error(
+            `Lesson generation failed for module ${module.title}: ${lessonBatchResult.error}`,
+          );
         }
 
         const moduleResult = {
@@ -139,16 +150,60 @@ export const generateEntireCourseTask = schemaTask({
           moduleTitle: module.title,
           ...lessonBatchResult.output,
         };
-        
+
         moduleResults.push(moduleResult);
       }
-      
+
       logger.log("All modules generated successfully", {
         modulesGenerated: moduleResults.length,
-        totalLessonsGenerated: moduleResults.reduce((total, module) => total + module.totalLessons, 0),
+        totalLessonsGenerated: moduleResults.reduce(
+          (total, module) => total + module.totalLessons,
+          0,
+        ),
       });
 
       logger.log("Step 4: Finalizing course");
+
+      // Aggregate results from all modules
+      const contentResults = moduleResults.flatMap(
+        (module) => module.lessonsGenerated || [],
+      );
+      const videoResults = moduleResults.flatMap(
+        (module) =>
+          module.lessonsGenerated?.map((lesson) => ({
+            videoAttached: lesson.videoAttached,
+            videoTitle: lesson.videoTitle,
+            videoId: lesson.videoId,
+          })) || [],
+      );
+      const quizResults = moduleResults.flatMap(
+        (module) =>
+          module.lessonsGenerated?.map((lesson) => ({
+            quizGenerated: lesson.questionsCount > 0,
+            questionsCount: lesson.questionsCount,
+          })) || [],
+      );
+      const exampleResults = moduleResults.flatMap(
+        (module) =>
+          module.lessonsGenerated?.map((lesson) => ({
+            examplesCount: lesson.examplesCount,
+          })) || [],
+      );
+      const flashcardResults = moduleResults.flatMap(
+        (module) =>
+          module.lessonsGenerated?.map((lesson) => ({
+            flashcardsCount: lesson.flashcardsCount || 0,
+          })) || [],
+      );
+
+      // For now, we don't have explicit failure tracking from lesson batch,
+      // but we can add it later if needed
+      const failedLessons: any[] = [];
+      const failedVideos: any[] = [];
+      const failedQuizzes: any[] = [];
+      const failedExamples: any[] = [];
+      const failedFlashcards: any[] = [];
+
       const finalizeResult = await tasks.triggerAndWait(
         "course-generation.finalize-course",
         {
@@ -161,7 +216,18 @@ export const generateEntireCourseTask = schemaTask({
               isGenerated: true,
             })),
           },
-        }
+          courseSettings,
+          contentResults,
+          videoResults,
+          quizResults,
+          exampleResults,
+          failedLessons,
+          failedVideos,
+          failedQuizzes,
+          failedExamples,
+          flashcardResults,
+          failedFlashcards,
+        },
       );
 
       if (!finalizeResult.ok) {
@@ -172,7 +238,10 @@ export const generateEntireCourseTask = schemaTask({
         userId,
         courseId: courseId,
         totalModules: courseStructure.modules.length,
-        totalLessonsGenerated: moduleResults.reduce((total, module) => total + module.totalLessons, 0),
+        totalLessonsGenerated: moduleResults.reduce(
+          (total, module) => total + module.totalLessons,
+          0,
+        ),
       });
 
       return {
@@ -180,11 +249,13 @@ export const generateEntireCourseTask = schemaTask({
         courseId: courseId,
         courseTitle: courseSettings.title,
         totalModules: courseStructure.modules.length,
-        totalLessonsGenerated: moduleResults.reduce((total, module) => total + module.totalLessons, 0),
+        totalLessonsGenerated: moduleResults.reduce(
+          (total, module) => total + module.totalLessons,
+          0,
+        ),
         moduleResults,
         generationStatus: "completed",
       };
-
     } catch (error) {
       logger.error("Complete course generation failed", {
         userId,
@@ -194,4 +265,4 @@ export const generateEntireCourseTask = schemaTask({
       throw error;
     }
   },
-}); 
+});

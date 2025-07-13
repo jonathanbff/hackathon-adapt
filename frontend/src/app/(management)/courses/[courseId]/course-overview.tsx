@@ -7,11 +7,13 @@ import {
   RiGitRepositoryLine,
   RiInfoCardLine,
   RiLoader2Line,
+  RiMicLine,
   RiMindMap,
   RiVideoChatLine,
 } from "@remixicon/react";
 import { desc } from "drizzle-orm";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Card,
   CardDescription,
@@ -19,6 +21,18 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { AudioPlayer } from "~/components/ui/audio-player";
 import { api } from "~/trpc/react";
 
 const FEATURES = [
@@ -73,6 +87,56 @@ export function CourseOverview({ courseId }: { courseId: string }) {
     courseId,
   });
 
+  // Podcast generation state
+  const [podcastLoading, setPodcastLoading] = useState(false);
+  const [podcastData, setPodcastData] = useState<{
+    audioUrl: string;
+    title: string;
+  } | null>(null);
+
+  const generatePodcast = async () => {
+    if (!course?.title || !course?.description) {
+      alert("Dados do curso não disponíveis");
+      return;
+    }
+
+    setPodcastLoading(true);
+    try {
+      const response = await fetch(
+        "https://davisuga-chief--edu-one-generate-podcast.modal.run",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: course.description,
+            title: course.title,
+            target_audience: "estudantes interessados no curso",
+            format_style: "Conversa educacional entre especialista e mediador",
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ao gerar podcast: ${response.statusText}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      setPodcastData({
+        audioUrl,
+        title: course.title,
+      });
+    } catch (error) {
+      console.error("Erro ao gerar podcast:", error);
+      alert("Erro ao gerar podcast. Tente novamente.");
+    } finally {
+      setPodcastLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="relative z-50 mx-auto flex w-full flex-1 flex-col self-stretch ">
@@ -124,6 +188,8 @@ export function CourseOverview({ courseId }: { courseId: string }) {
       </div>
 
       <section className="flex-1 px-4 py-5 max-w-5xl w-full mx-auto">
+        {/* Podcast Generation Section */}
+
         <div className="bg-gradient-to-br from-primary/10 via-primary-glow/5 to-transparent rounded-2xl p-8 border border-border/50 animate-fade-in">
           <h1 className="text-4xl font-bold text-foreground mb-4">
             {course?.title}
@@ -148,7 +214,48 @@ export function CourseOverview({ courseId }: { courseId: string }) {
             </div>
           </div>
         </div>
+        <div className="mt-8">
+          <Card className="bg-card/50 backdrop-blur-sm border-border">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <RiMicLine className="size-5" />
+                Podcast do Curso
+              </CardTitle>
+              <CardDescription>
+                Gere um podcast baseado no conteúdo do curso
+              </CardDescription>
+            </CardHeader>
+            <div className="p-6 pt-0 space-y-4">
+              <Button
+                onClick={generatePodcast}
+                disabled={podcastLoading}
+                className="flex items-center gap-2"
+              >
+                {podcastLoading ? (
+                  <>
+                    <RiLoader2Line className="size-4 animate-spin" />
+                    Gerando Podcast...
+                  </>
+                ) : (
+                  <>
+                    <RiMicLine className="size-4" />
+                    Gerar Podcast
+                  </>
+                )}
+              </Button>
 
+              {podcastData && (
+                <div className="mt-4">
+                  <AudioPlayer
+                    src={podcastData.audioUrl}
+                    title={podcastData.title}
+                    className="w-full"
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
         <h2 className="text-base font-semibold text-foreground mt-8">
           Recursos para esse curso:
         </h2>

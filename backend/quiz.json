@@ -1,70 +1,70 @@
 {
   "questions": [
     {
-      "question": "O que é uma rede neural?",
+      "question": "O que são Redes Neurais?",
       "question_type": "multiple-choice",
       "options": [
-        "Um tipo de conexão de internet",
-        "Um tipo de hardware",
-        "Um modelo de aprendizado de máquina",
-        "Nenhuma das opções"
+        "Um tipo de algoritmo de aprendizado de máquina.",
+        "Um tipo de estrutura de dados.",
+        "Um tipo de linguagem de programação.",
+        "Um navio usado em missões de exploração espacial."
       ],
-      "correct_answer": "Um modelo de aprendizado de máquina"
+      "correct_answer": "Um tipo de algoritmo de aprendizado de máquina."
     },
     {
-      "question": "Quais são tipos de Redes Neurais?",
+      "question": "O que são Perceptrons em Arquitetura de Redes Neurais?",
       "question_type": "multiple-choice",
       "options": [
-        "Convolucionais e Recorrentes",
-        "Lineares e Exponenciais",
-        "Positivas e Negativas",
-        "Altas e Baixas"
+        "Um tipo de rede neural simples.",
+        "Um tipo de rede neural recursiva.",
+        "Um tipo de algoritmo de aprendizado de redes neurais.",
+        "Uma medida de desempenho da rede neural."
       ],
-      "correct_answer": "Convolucionais e Recorrentes"
+      "correct_answer": "Um tipo de rede neural simples."
     },
     {
-      "question": "O que são neurônios e perceptrons na rede neural?",
+      "question": "O que é Backpropagation em algoritmos de aprendizado de redes neurais?",
       "question_type": "multiple-choice",
       "options": [
-        "Partes da rede responsáveis pela alimentação de dados",
-        "Partes da rede responsáveis pelo armazenamento de dados",
-        "Elementos básicos da rede responsáveis pelo processamento de informação",
-        "Nenhuma das opções"
+        "Uma técnica de treinamento.",
+        "Um tipo de arquitetura de rede.",
+        "Um tipo de regularização.",
+        "Uma maneira de medir o erro de uma rede."
       ],
-      "correct_answer": "Elementos básicos da rede responsáveis pelo processamento de informação"
+      "correct_answer": "Uma técnica de treinamento."
     },
     {
-      "question": "O que é uma Rede Neural Convolucional?",
+      "question": "O que são CNNs em redes neurais convolucionais e recorrentes?",
       "question_type": "multiple-choice",
       "options": [
-        "Um tipo de Rede Neural especializada em processar dados com estrutura de grade",
-        "Um tipo de Rede Neural que não precisa de aprendizado supervisionado",
-        "Um tipo de Rede Neural que não pode ser utilizada para reconhecimento de imagens",
-        "Nenhuma das opções"
+        "Um tipo de algoritmo de aprendizado.",
+        "Uma técnica de normalização.",
+        "Um tipo de rede neural usado em imagem e reconhecimento de voz.",
+        "Uma métrica de avaliação de desempenho."
       ],
-      "correct_answer": "Um tipo de Rede Neural especializada em processar dados com estrutura de grade"
+      "correct_answer": "Um tipo de rede neural usado em imagem e reconhecimento de voz."
     },
     {
-      "question": "O que é uma Rede Neural Recorrente?",
+      "question": "O que é Overfitting em práticas de treinamento de redes neurais?",
       "question_type": "multiple-choice",
       "options": [
-        "Um tipo de Rede Neural que não processa dados sequenciais",
-        "Um tipo de Rede Neural cujas conexões entre os neurônios formam um ciclo",
-        "Um tipo de Rede Neural que não tem capacidade de lembrar informações passadas",
-        "Nenhuma das opções"
+        "Um modelo cujo treinamento se baseia demais nos dados de treinamento e geralmente tem um desempenho ruim em novos dados.",
+        "Um modelo que está subajustado e tem um desempenho ruim nos dados de treinamento.",
+        "Uma técnica de regularização.",
+        "Uma maneira de medir a acurácia de um modelo."
       ],
-      "correct_answer": "Um tipo de Rede Neural cujas conexões entre os neurônios formam um ciclo"
+      "correct_answer": "Um modelo cujo treinamento se baseia demais nos dados de treinamento e geralmente tem um desempenho ruim em novos dados."
     },
     {
-      "question": "No contexto do Deep Learning, o que é Fine-Tuning?",
+      "question": "Onde as Redes Neurais são usadas no cotidiano?",
       "question_type": "multiple-choice",
       "options": [
-        "O processo de ajuste minucioso de um modelo pré-treinado para uma tarefa específica",
-        "O processo de treinamento de um modelo do zero",
-        "O processo de selecionar o melhor modelo com base em seu desempenho em um conjunto de validação",
-        "Nenhuma das opções"
+        "Em sistemas de recomendação.",
+        "No desenvolvimento de aplicativos.",
+        "Em foguetes espaciais.",
+        "Em utensílios domésticos."
       ],
-      "correct_answer": "O processo de ajuste minucioso de um modelo pré-treinado para uma tarefa específica"
+      "correct_answer": "Em sistemas de recomendação."
     }
   ]
 }
