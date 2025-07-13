@@ -2,14 +2,11 @@
 
 import * as React from "react"
 import {
-  Calendar,
   ChevronUp,
   Home,
-  Inbox,
-  Search,
   Settings,
   User2,
-  Upload,
+  FileText,
   MessageSquare,
   Sparkles,
   BookOpen,
@@ -57,24 +54,9 @@ const items = [
     icon: MessageSquare,
   },
   {
-    title: "Inbox",
-    url: "/inbox",
-    icon: Inbox,
-  },
-  {
-    title: "Calendar",
-    url: "/calendar",
-    icon: Calendar,
-  },
-  {
-    title: "Search",
-    url: "/search",
-    icon: Search,
-  },
-  {
-    title: "Test Ingestion",
-    url: "/test-ingestion",
-    icon: Upload,
+    title: "Sources",
+    url: "/sources",
+    icon: FileText,
   },
   {
     title: "Settings",

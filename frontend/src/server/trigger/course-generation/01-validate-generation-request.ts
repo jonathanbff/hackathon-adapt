@@ -17,6 +17,15 @@ export const validateGenerationRequestTask = schemaTask({
       // Validate the input data
       const validatedData = courseGenerationInputSchema.parse(generationRequest);
       
+      // Transform materials to match database schema
+      const materials = validatedData.materials ? {
+        documents: validatedData.materials.documents || [],
+        videos: validatedData.materials.videos || [],
+        audios: validatedData.materials.audios || [],
+        images: validatedData.materials.images || [],
+        roadmap: validatedData.materials.roadmap || null,
+      } : null;
+
       // Create the course generation request in the database
       const [newRequest] = await db
         .insert(courseGenerationRequests)
@@ -29,7 +38,7 @@ export const validateGenerationRequestTask = schemaTask({
           difficulty: validatedData.difficulty,
           format: validatedData.format,
           structure: validatedData.structure,
-          materials: validatedData.materials,
+          materials,
           aiPreferences: validatedData.aiPreferences,
           userProfileContext: validatedData.userProfileContext,
           status: "processing",

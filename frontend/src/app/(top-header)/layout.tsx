@@ -27,10 +27,10 @@ export default function TopHeaderLayout({
                 Chat
               </Link>
               <Link
-                href="/test-ingestion"
+                href="/sources"
                 className="transition-colors hover:text-foreground/80 text-foreground/60"
               >
-                Test Ingestion
+                Sources
               </Link>
             </nav>
           </div>
