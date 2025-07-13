@@ -654,4 +654,45 @@ export const coursesRouter = createTRPCRouter({
 
       return contentItemsData;
     }),
+
+  getCourseQuizzes: publicProcedure
+    .input(z.object({ courseId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const quizContentItems = await ctx.db
+        .select({
+          id: contentItems.id,
+          title: contentItems.title,
+          content: contentItems.content,
+          contentType: contentItems.contentType,
+          orderIndex: contentItems.orderIndex,
+          createdAt: contentItems.createdAt,
+          updatedAt: contentItems.updatedAt,
+          lesson: {
+            id: lessons.id,
+            title: lessons.title,
+            orderIndex: lessons.orderIndex,
+          },
+          module: {
+            id: modules.id,
+            title: modules.title,
+            orderIndex: modules.orderIndex,
+          },
+        })
+        .from(contentItems)
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(
+          and(
+            eq(modules.courseId, input.courseId),
+            eq(contentItems.contentType, "quiz")
+          )
+        )
+        .orderBy(
+          modules.orderIndex,
+          lessons.orderIndex,
+          contentItems.orderIndex
+        );
+
+      return quizContentItems;
+    }),
 });

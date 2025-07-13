@@ -30,12 +30,19 @@ const FEATURES = [
     href: "/learning/{id}",
   },
   {
-    title: "Mindmap",
+    title: "Quizzes",
     description:
-      "Veja o roadmap do curso e acompanhe seu progresso em cada módulo.",
-    icon: RiMindMap,
-    href: "/courses/{id}/mindmap",
+      "Teste o que aprendeu com quizzes interativos e receba feedback imediato.",
+    icon: RiBrainLine,
+    href: "/courses/{id}/quizzes",
   },
+  // {
+  //   title: "Mindmap",
+  //   description:
+  //     "Veja o roadmap do curso e acompanhe seu progresso em cada módulo.",
+  //   icon: RiMindMap,
+  //   href: "/courses/{id}/mindmap",
+  // },
   {
     title: "Flashcards",
     description:
@@ -44,26 +51,19 @@ const FEATURES = [
     href: "/courses/{id}/flashcards",
   },
   {
-    title: "Quizzes",
-    description:
-      "Teste o que aprendeu com quizzes interativos e receba feedback imediato.",
-    icon: RiBrainLine,
-    href: "/courses/{id}/quizzes",
-  },
-  {
     title: "Converse com Professor AI",
     description:
       "Converse com o Professor AI para tirar dúvidas e obter explicações detalhadas sobre o conteúdo do curso",
     icon: RiVideoChatLine,
     href: "/courses/{id}/voice-call",
   },
-  {
-    title: "Materiais de Apoio",
-    description:
-      "Acesse os materiais de apoio do curso, como PDFs e links úteis.",
-    icon: RiFolder3Line,
-    href: "/courses/{id}/resources",
-  },
+  // {
+  //   title: "Materiais de Apoio",
+  //   description:
+  //     "Acesse os materiais de apoio do curso, como PDFs e links úteis.",
+  //   icon: RiFolder3Line,
+  //   href: "/courses/{id}/resources",
+  // },
 ];
 
 export function CourseOverview({ courseId }: { courseId: string }) {
