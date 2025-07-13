@@ -9,7 +9,7 @@ const groq = createOpenAI({
 });
 
 const GROQ_MODELS = {
-  FAST: "meta-llama/llama-4-scout-17b-16e-instruct",
+  FAST: "llama-3.3-70b-versatile",
   ULTRA_FAST: "llama-3.1-8b-instant",
   REASONING: "llama-3.2-90b-text-preview",
 } as const;

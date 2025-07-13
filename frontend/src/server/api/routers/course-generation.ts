@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { courseGenerationInputSchema, courses, courseGenerationRequests, modules } from "~/server/db/schemas";
+import { courseGenerationInputSchema, courses, modules } from "~/server/db/schemas";
 import { runs, tasks } from "@trigger.dev/sdk/v3";
 import { TRPCError } from "@trpc/server";
 import { eq, desc } from "drizzle-orm";
@@ -9,7 +9,7 @@ export const courseGenerationRouter = createTRPCRouter({
   generate: publicProcedure
     .input(
       z.object({
-        userId: z.string().uuid(),
+        userId: z.string(),
         generationRequest: courseGenerationInputSchema,
       })
     )
@@ -23,7 +23,7 @@ export const courseGenerationRouter = createTRPCRouter({
         return {
           success: true,
           runId: run.id,
-          message: "Full AI course generation started successfully",
+          message: "AI course generation started successfully",
         };
       } catch (error) {
         console.error("Failed to trigger course generation:", error);
@@ -55,44 +55,6 @@ export const courseGenerationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Run not found",
-        });
-      }
-    }),
-
-  getRequestStatus: publicProcedure
-    .input(z.object({ requestId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const [request] = await ctx.db
-          .select()
-          .from(courseGenerationRequests)
-          .where(eq(courseGenerationRequests.id, input.requestId))
-          .limit(1);
-
-        if (!request) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Request not found",
-          });
-        }
-
-        return {
-          id: request.id,
-          status: request.status,
-          isCompleted: request.status === "completed",
-          isFailed: request.status === "failed",
-          isGenerating: request.isGenerating,
-          generationProgress: request.generationProgress,
-          currentStep: request.currentStep,
-          courseId: request.courseId,
-          createdAt: request.createdAt,
-          updatedAt: request.updatedAt,
-        };
-      } catch (error) {
-        console.error("Failed to retrieve request status:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to retrieve request status",
         });
       }
     }),
@@ -156,47 +118,14 @@ export const courseGenerationRouter = createTRPCRouter({
           .where(eq(courses.id, input.courseId))
           .limit(1);
 
-        if (course) {
-          return course;
+        if (!course) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Course not found",
+          });
         }
 
-        const [request] = await ctx.db
-          .select()
-          .from(courseGenerationRequests)
-          .where(eq(courseGenerationRequests.id, input.courseId))
-          .limit(1);
-
-        if (request && request.courseId) {
-          const [actualCourse] = await ctx.db
-            .select()
-            .from(courses)
-            .where(eq(courses.id, request.courseId))
-            .limit(1);
-
-          if (actualCourse) {
-            return actualCourse;
-          }
-        }
-
-        if (request) {
-          return {
-            id: request.id,
-            title: request.title,
-            description: request.description || "Course is being generated...",
-            status: request.status,
-            createdAt: request.createdAt,
-            updatedAt: request.updatedAt,
-            isGenerationRequest: true,
-            generationProgress: request.generationProgress,
-            currentStep: request.currentStep,
-            isGenerating: request.isGenerating,
-          };
-        }
-
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Course not found",
-        });
+        return course;
       } catch (error) {
         console.error("Failed to fetch course:", error);
         throw new TRPCError({
@@ -271,51 +200,15 @@ export const courseGenerationRouter = createTRPCRouter({
           .limit(input.limit)
           .offset(input.offset);
 
-        const pendingRequests = await ctx.db
-          .select({
-            id: courseGenerationRequests.id,
-            title: courseGenerationRequests.title,
-            description: courseGenerationRequests.description,
-            status: courseGenerationRequests.status,
-            createdAt: courseGenerationRequests.createdAt,
-            updatedAt: courseGenerationRequests.updatedAt,
-            userId: courseGenerationRequests.userId,
-            isGenerating: courseGenerationRequests.isGenerating,
-            generationProgress: courseGenerationRequests.generationProgress,
-          })
-          .from(courseGenerationRequests)
-          .orderBy(desc(courseGenerationRequests.createdAt))
-          .limit(10);
-
-        const coursesWithType = allCourses.map(course => ({
-          ...course,
-          type: "completed" as const,
-        }));
-
-        const requestsWithType = pendingRequests
-          .filter(req => req.status !== "completed")
-          .map(request => ({
-            id: request.id,
-            title: request.title,
-            description: request.description || "Course being generated...",
-            status: request.status,
-                         createdAt: request.createdAt,
-             updatedAt: request.updatedAt,
-             type: "generating" as const,
-            isGenerating: request.isGenerating,
-            generationProgress: request.generationProgress,
-          }));
-
-        const combinedResults = [...requestsWithType, ...coursesWithType]
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, input.limit);
-
         return {
-          courses: combinedResults,
+          courses: allCourses.map(course => ({
+            ...course,
+            type: "completed" as const,
+          })),
           pagination: {
             limit: input.limit,
             offset: input.offset,
-            total: allCourses.length + requestsWithType.length,
+            total: allCourses.length,
           },
         };
       } catch (error) {
@@ -323,6 +216,40 @@ export const courseGenerationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch courses",
+        });
+      }
+    }),
+
+  generateMoreLessons: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        courseId: z.string(),
+        moduleId: z.string(),
+        startFromIndex: z.number(),
+        count: z.number().default(2),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const run = await tasks.trigger("course-generation.generate-more-lessons", {
+          userId: input.userId,
+          courseId: input.courseId,
+          moduleId: input.moduleId,
+          startFromIndex: input.startFromIndex,
+          count: input.count,
+        });
+
+        return {
+          success: true,
+          runId: run.id,
+          message: "On-demand lesson generation started successfully",
+        };
+      } catch (error) {
+        console.error("Failed to trigger on-demand lesson generation:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to start on-demand lesson generation",
         });
       }
     }),

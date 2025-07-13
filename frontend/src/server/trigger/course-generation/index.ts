@@ -1,7 +1,10 @@
-export { validateGenerationRequestTask } from "./01-validate-generation-request";
-export { createCourseStructureTask } from "./02-create-course-structure";
-export { generateModuleContentTask } from "./03-generate-module-content";
-export { generateLessonContentTask } from "./04-generate-lesson-content";
-export { generateAssessmentsTask } from "./05-generate-assessments";
+export { validateGenerationRequestTask } from "./00-validate-generation-request";
+export { createCourseStructureTask } from "./01-create-course-structure";
+export { generateLessonContentTask, generateLessonContentBatchTask } from "./02-generate-lesson-content";
+export { searchVideoTask, searchVideosBatchTask } from "./03-search-videos";
+export { generateQuizTask, generateQuizzesBatchTask } from "./04-generate-quizzes";
+export { generateExamplesTask, generateExamplesBatchTask } from "./05-generate-examples";
 export { finalizeCourseTask } from "./06-finalize-course";
+export { generateLessonBatchTask } from "./generate-lesson-batch";
+export { generateMoreLessonsTask } from "./generate-more-lessons";
 export { mainCourseGenerationTask } from "./main-course-generation-task"; 

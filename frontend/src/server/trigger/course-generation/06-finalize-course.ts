@@ -1,121 +1,118 @@
-import { schemaTask } from "@trigger.dev/sdk/v3";
+import { logger, schemaTask } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { courses, courseGenerationRequests } from "~/server/db/schemas";
-import { db } from "~/server/db";
+import { db } from "~/server/db/connection";
+import { courses } from "~/server/db/schemas";
 import { eq } from "drizzle-orm";
 
 export const finalizeCourseTask = schemaTask({
   id: "course-generation.finalize-course",
   schema: z.object({
-    requestId: z.string(),
-    courseId: z.string(),
-    generationResults: z.object({
-      courseStructure: z.object({
-        totalModules: z.number(),
-        totalLessons: z.number(),
-      }),
-      moduleContent: z.object({
-        totalModules: z.number(),
-      }),
-      lessonContent: z.object({
-        totalLessons: z.number(),
-        totalContentItems: z.number(),
-      }),
-      assessments: z.object({
-        totalAssessments: z.number(),
-        totalQuizQuestions: z.number(),
-        totalExercises: z.number(),
-        totalProjects: z.number(),
-      }),
+    userId: z.string(),
+    courseId: z.string().uuid(),
+    courseStructure: z.object({
+      title: z.string(),
+      description: z.string(),
+      estimatedTotalDuration: z.string(),
+      modules: z.array(
+        z.object({
+          id: z.string().uuid(),
+          title: z.string(),
+          description: z.string(),
+          lessons: z.array(
+            z.object({
+              id: z.string().uuid(),
+              title: z.string(),
+              description: z.string(),
+            })
+          ),
+        })
+      ),
     }),
+    courseSettings: z.any(),
+    contentResults: z.array(z.any()).optional(),
+    videoResults: z.array(z.any()).optional(),
+    quizResults: z.array(z.any()).optional(),
+    exampleResults: z.array(z.any()).optional(),
+    failedLessons: z.array(z.any()).optional(),
+    failedVideos: z.array(z.any()).optional(),
+    failedQuizzes: z.array(z.any()).optional(),
+    failedExamples: z.array(z.any()).optional(),
   }),
   retry: {
     maxAttempts: 3,
   },
-  run: async ({ requestId, courseId, generationResults }) => {
-    try {
-      // Update progress to final step
-      await db
-        .update(courseGenerationRequests)
-        .set({
-          generationProgress: 100,
-          currentStep: 6,
-        })
-        .where(eq(courseGenerationRequests.id, requestId));
+  run: async ({ 
+    userId, 
+    courseId, 
+    courseStructure, 
+    courseSettings,
+    contentResults,
+    videoResults,
+    quizResults,
+    exampleResults,
+    failedLessons,
+    failedVideos,
+    failedQuizzes,
+    failedExamples
+  }) => {
+    logger.log("Finalizing course generation", {
+      userId,
+      courseId,
+      title: courseStructure.title,
+    });
 
-      // Update course status to published
-      const [finalizedCourse] = await db
-        .update(courses)
-        .set({
-          status: "published",
-          updatedAt: new Date(),
-        })
-        .where(eq(courses.id, courseId))
-        .returning();
+    const totalLessons = courseStructure.modules.reduce((sum, module) => sum + module.lessons.length, 0);
+    const successfulContent = contentResults?.length || 0;
+    const videosAttached = videoResults?.filter(result => result.videoAttached).length || 0;
+    const quizzesGenerated = quizResults?.filter(result => result.quizGenerated).length || 0;
+    const examplesGenerated = exampleResults?.reduce((sum, result) => sum + result.examplesCount, 0) || 0;
 
-      if (!finalizedCourse) {
-        throw new Error("Failed to finalize course");
-      }
+    const totalFailed = (failedLessons?.length || 0) + 
+                       (failedVideos?.length || 0) + 
+                       (failedQuizzes?.length || 0) + 
+                       (failedExamples?.length || 0);
 
-      // Update course generation request to completed
-      const [completedRequest] = await db
-        .update(courseGenerationRequests)
-        .set({
-          status: "completed",
-          generationProgress: 100,
-          currentStep: 6,
-          isGenerating: false,
-        })
-        .where(eq(courseGenerationRequests.id, requestId))
-        .returning();
+    const completionPercentage = Math.round((successfulContent / totalLessons) * 100);
 
-      if (!completedRequest) {
-        throw new Error("Failed to update course generation request");
-      }
+    await db
+      .update(courses)
+      .set({
+        status: totalFailed > 0 ? "completed_with_errors" : "completed",
+        updatedAt: new Date(),
+      })
+      .where(eq(courses.id, courseId));
 
-      // Calculate course statistics
-      const courseStats = {
-        totalModules: generationResults.courseStructure.totalModules,
-        totalLessons: generationResults.lessonContent.totalLessons,
-        totalContentItems: generationResults.lessonContent.totalContentItems,
-        totalAssessments: generationResults.assessments.totalAssessments,
-        totalQuizQuestions: generationResults.assessments.totalQuizQuestions,
-        totalExercises: generationResults.assessments.totalExercises,
-        totalProjects: generationResults.assessments.totalProjects,
-      };
+    const generationSummary = {
+      totalLessons,
+      successfulContent,
+      videosAttached,
+      quizzesGenerated,
+      examplesGenerated,
+      totalFailed,
+      completionPercentage,
+      failedBreakdown: {
+        failedLessons: failedLessons?.length || 0,
+        failedVideos: failedVideos?.length || 0,
+        failedQuizzes: failedQuizzes?.length || 0,
+        failedExamples: failedExamples?.length || 0,
+      },
+    };
 
-      return {
-        success: true,
-        courseId: finalizedCourse.id,
-        courseTitle: finalizedCourse.title,
-        courseStatus: finalizedCourse.status,
-        completedAt: new Date(),
-        requestId: completedRequest.id,
-        courseStats,
-        message: "Course generation completed successfully",
-        redirectUrl: `/course-structure?courseId=${finalizedCourse.id}`,
-      };
-    } catch (error) {
-      console.error("Error finalizing course:", error);
-      
-      // Update request status to failed
-      await db
-        .update(courseGenerationRequests)
-        .set({
-          status: "failed",
-          isGenerating: false,
-        })
-        .where(eq(courseGenerationRequests.id, requestId));
+    logger.log("Course generation finalized successfully", {
+      userId,
+      courseId,
+      title: courseStructure.title,
+      status: totalFailed > 0 ? "completed_with_errors" : "completed",
+      summary: generationSummary,
+    });
 
-      // Update course status to failed
-      await db
-        .update(courses)
-        .set({
-          status: "failed",
-        })
-        .where(eq(courses.id, courseId));
-
-      throw new Error(`Course finalization failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
+    return {
+      userId,
+      courseId,
+      courseTitle: courseStructure.title,
+      courseStatus: totalFailed > 0 ? "completed_with_errors" : "completed",
+      courseStructure,
+      generationSummary,
+    };
   },
 }); 
