@@ -34,17 +34,19 @@ export function Hero() {
             Aprenda de forma{" "}
           </span>
           <br />
-          <TextRotate
-            texts={[
-              "Personalizada",
-              "Inteligente",
-              "Eficiente",
-              "Científica",
-              "Adaptativa",
-            ]}
+          <p
+            // texts={[
+            //   "Personalizada",
+            //   "Inteligente",
+            //   "Eficiente",
+            //   "Científica",
+            //   "Adaptativa",
+            // ]}
             className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent"
-            rotationInterval={3000}
-          />
+            // rotationInterval={3000}
+          >
+            Personalizada
+          </p>
         </h1>
       </motion.div>
 
@@ -77,7 +79,7 @@ export function Hero() {
         <Button
           variant="outline"
           size="lg"
-          onClick={() => router.push("/catalogo")}
+          onClick={() => router.push("/cursos")}
         >
           Explorar Cursos
         </Button>
