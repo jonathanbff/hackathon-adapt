@@ -55,15 +55,10 @@ export default function Flashcards() {
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [responseStartTime, setResponseStartTime] = useState<number | null>(
-    null,
-  );
-  const [responseTime, setResponseTime] = useState<number | null>(null);
   const [sessionStats, setSessionStats] = useState({
     reviewed: 0,
     correct: 0,
     incorrect: 0,
-    averageResponseTime: 0,
   });
 
   // Get user profile to get internal database user ID
@@ -236,68 +231,16 @@ export default function Flashcards() {
 
   const handleCardFlip = () => {
     setIsFlipped(!isFlipped);
-    if (!isFlipped) {
-      // Starting to view the answer - record the time
-      setResponseStartTime(Date.now());
-    }
   };
 
-  const calculateDifficultyFromTime = (
-    timeMs: number,
-  ): "easy" | "medium" | "hard" => {
-    // Thresholds in milliseconds
-    const EASY_THRESHOLD = 3000; // 3 seconds
-    const MEDIUM_THRESHOLD = 8000; // 8 seconds
-
-    if (timeMs <= EASY_THRESHOLD) return "easy";
-    if (timeMs <= MEDIUM_THRESHOLD) return "medium";
-    return "hard";
-  };
-
-  const getDifficultyLabel = (timeMs: number): string => {
-    const difficulty = calculateDifficultyFromTime(timeMs);
-    switch (difficulty) {
-      case "easy":
-        return "Rápido";
-      case "medium":
-        return "Médio";
-      case "hard":
-        return "Lento";
-    }
-  };
-
-  const getDifficultyColor = (timeMs: number): string => {
-    const difficulty = calculateDifficultyFromTime(timeMs);
-    switch (difficulty) {
-      case "easy":
-        return "bg-green-500/20 text-green-400 border-green-500/30";
-      case "medium":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-      case "hard":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
-    }
-  };
-
-  const handleResponse = async (isCorrect: boolean) => {
+  const handleResponse = async (
+    performance: "easy" | "medium" | "hard" | "failed",
+  ) => {
     if (!isFlipped || !currentCard || !userProfile?.id) {
       toast.error("Unable to submit answer", {
         description: "Please ensure you're logged in and try again.",
       });
       return;
-    }
-
-    // Calculate response time
-    const currentTime = Date.now();
-    const timeTaken = responseStartTime ? currentTime - responseStartTime : 0;
-    setResponseTime(timeTaken);
-
-    // Determine performance based on correctness and response time
-    let performance: "easy" | "medium" | "hard" | "failed";
-
-    if (!isCorrect) {
-      performance = "failed";
-    } else {
-      performance = calculateDifficultyFromTime(timeTaken);
     }
 
     try {
@@ -310,21 +253,20 @@ export default function Flashcards() {
 
       setSessionStats((prev) => ({
         reviewed: prev.reviewed + 1,
-        correct: isCorrect ? prev.correct + 1 : prev.correct,
-        incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect,
-        averageResponseTime:
-          prev.reviewed > 0
-            ? (prev.averageResponseTime * prev.reviewed + timeTaken) /
-              (prev.reviewed + 1)
-            : timeTaken,
+        correct:
+          performance === "easy" || performance === "medium"
+            ? prev.correct + 1
+            : prev.correct,
+        incorrect:
+          performance === "hard" || performance === "failed"
+            ? prev.incorrect + 1
+            : prev.incorrect,
       }));
 
       // Move to next card
       if (currentCardIndex < flashcards.length - 1) {
         setCurrentCardIndex(currentCardIndex + 1);
         setIsFlipped(false);
-        setResponseStartTime(null);
-        setResponseTime(null);
       }
     } catch (error) {
       console.error("Error submitting answer:", error);
@@ -339,22 +281,13 @@ export default function Flashcards() {
   const resetSession = () => {
     setCurrentCardIndex(0);
     setIsFlipped(false);
-    setResponseStartTime(null);
-    setResponseTime(null);
-    setSessionStats({
-      reviewed: 0,
-      correct: 0,
-      incorrect: 0,
-      averageResponseTime: 0,
-    });
+    setSessionStats({ reviewed: 0, correct: 0, incorrect: 0 });
   };
 
   const goToPrevious = () => {
     if (currentCardIndex > 0) {
       setCurrentCardIndex(currentCardIndex - 1);
       setIsFlipped(false);
-      setResponseStartTime(null);
-      setResponseTime(null);
     }
   };
 
@@ -362,12 +295,10 @@ export default function Flashcards() {
     if (currentCardIndex < flashcards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
       setIsFlipped(false);
-      setResponseStartTime(null);
-      setResponseTime(null);
     }
   };
 
-  const getAttemptsDifficultyColor = (attempts: number) => {
+  const getDifficultyColor = (attempts: number) => {
     if (attempts === 0)
       return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     if (attempts <= 2)
@@ -377,11 +308,11 @@ export default function Flashcards() {
     return "bg-red-500/20 text-red-400 border-red-500/30";
   };
 
-  const getAttemptsDifficultyLabel = (attempts: number) => {
-    if (attempts === 0) return "Nova";
-    if (attempts <= 2) return "Fácil";
-    if (attempts <= 4) return "Médio";
-    return "Difícil";
+  const getDifficultyLabel = (attempts: number) => {
+    if (attempts === 0) return "New";
+    if (attempts <= 2) return "Easy";
+    if (attempts <= 4) return "Medium";
+    return "Hard";
   };
 
   if (currentCardIndex >= flashcards.length) {
@@ -396,7 +327,7 @@ export default function Flashcards() {
             Sessão Concluída! 🎉
           </h1>
 
-          <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto">
+          <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
             <Card className="bg-card/50 backdrop-blur-sm border-border">
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-foreground">
@@ -419,16 +350,6 @@ export default function Flashcards() {
                   {sessionStats.incorrect}
                 </div>
                 <div className="text-sm text-red-300">Incorretas</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-blue-500/10 backdrop-blur-sm border-blue-500/20">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-400">
-                  {sessionStats.averageResponseTime > 0
-                    ? `${(sessionStats.averageResponseTime / 1000).toFixed(1)}s`
-                    : "0s"}
-                </div>
-                <div className="text-sm text-blue-300">Tempo Médio</div>
               </CardContent>
             </Card>
           </div>
@@ -477,7 +398,7 @@ export default function Flashcards() {
       </div>
 
       {/* Session Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Card className="bg-card/30 backdrop-blur-sm border-border">
           <CardContent className="p-4 text-center">
             <div className="text-lg font-semibold text-foreground">
@@ -502,16 +423,6 @@ export default function Flashcards() {
             <div className="text-sm text-red-300">Incorretas</div>
           </CardContent>
         </Card>
-        <Card className="bg-blue-500/10 backdrop-blur-sm border-blue-500/20">
-          <CardContent className="p-4 text-center">
-            <div className="text-lg font-semibold text-blue-400">
-              {sessionStats.averageResponseTime > 0
-                ? `${(sessionStats.averageResponseTime / 1000).toFixed(1)}s`
-                : "0s"}
-            </div>
-            <div className="text-sm text-blue-300">Tempo Médio</div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Flashcard */}
@@ -529,13 +440,11 @@ export default function Flashcards() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Badge
-                      className={getAttemptsDifficultyColor(
+                      className={getDifficultyColor(
                         currentCard?.progress?.attempts || 0,
                       )}
                     >
-                      {getAttemptsDifficultyLabel(
-                        currentCard?.progress?.attempts || 0,
-                      )}
+                      {getDifficultyLabel(currentCard?.progress?.attempts || 0)}
                     </Badge>
                     <Badge variant="outline">
                       {currentCard?.module?.title ||
@@ -567,20 +476,12 @@ export default function Flashcards() {
                     <Badge className="bg-accent/20 text-accent-foreground border-accent/30">
                       Resposta
                     </Badge>
-                    <div className="flex items-center gap-2">
-                      {responseTime && (
-                        <Badge className={getDifficultyColor(responseTime)}>
-                          {(responseTime / 1000).toFixed(1)}s -{" "}
-                          {getDifficultyLabel(responseTime)}
+                    {currentCard?.progress &&
+                      currentCard.progress.attempts > 0 && (
+                        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                          Tentativas: {currentCard.progress.attempts}
                         </Badge>
                       )}
-                      {currentCard?.progress &&
-                        currentCard.progress.attempts > 0 && (
-                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                            Tentativas: {currentCard.progress.attempts}
-                          </Badge>
-                        )}
-                    </div>
                   </div>
 
                   <div className="flex-1 flex items-center justify-center">
@@ -590,43 +491,66 @@ export default function Flashcards() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground text-center">
-                    Você acertou esta pergunta?
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleResponse(false);
-                      }}
-                      className="border-red-500/30 hover:bg-red-500/10 text-red-400"
-                      disabled={submitAnswerMutation.isPending}
-                    >
-                      {submitAnswerMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <XCircle className="w-4 h-4 mr-2" />
-                      )}
-                      Não, errei
-                    </Button>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleResponse(true);
-                      }}
-                      className="bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30"
-                      disabled={submitAnswerMutation.isPending}
-                    >
-                      {submitAnswerMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                      )}
-                      Sim, acertei
-                    </Button>
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResponse("failed");
+                    }}
+                    className="border-red-500/30 hover:bg-red-500/10"
+                    disabled={submitAnswerMutation.isPending}
+                  >
+                    {submitAnswerMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <XCircle className="w-4 h-4 mr-2" />
+                    )}
+                    Errou
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResponse("hard");
+                    }}
+                    className="border-yellow-500/30 hover:bg-yellow-500/10"
+                    disabled={submitAnswerMutation.isPending}
+                  >
+                    {submitAnswerMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    Difícil
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResponse("medium");
+                    }}
+                    className="border-blue-500/30 hover:bg-blue-500/10"
+                    disabled={submitAnswerMutation.isPending}
+                  >
+                    {submitAnswerMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    Médio
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleResponse("easy");
+                    }}
+                    className="bg-green-500/20 hover:bg-green-500/30 text-green-400"
+                    disabled={submitAnswerMutation.isPending}
+                  >
+                    {submitAnswerMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                    )}
+                    Fácil
+                  </Button>
                 </div>
               </CardContent>
             </Card>
