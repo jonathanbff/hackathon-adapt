@@ -1,8 +1,8 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
-import { Button } from "~/components/ui/button";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -10,10 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
 import { OnboardingForm } from "~/components/onboarding";
 import { api } from "~/trpc/react";
-import { useRouter } from "next/navigation";
-import { ONBOARDING_STATUS } from "~/types/auth";
+import { ONBOARDING_STATUS } from "~/lib/constants";
 
 export default function OnboardingPage() {
   const { user } = useUser();
@@ -80,8 +80,6 @@ export default function OnboardingPage() {
       console.error("Error completing onboarding:", error);
     }
   };
-
-  // return <OnboardingForm />;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
