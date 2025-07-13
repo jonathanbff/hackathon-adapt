@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OnboardingHeader } from "./onboarding-header";
 import { OnboardingNavigation } from "./onboarding-navigation";
@@ -13,6 +13,10 @@ import {
   MultipleIntelligencesStep,
 } from "./steps";
 import type { UserProfile } from "./types";
+import { useUser } from "@clerk/nextjs";
+import { api } from "~/trpc/react";
+import { ONBOARDING_STATUS } from "~/types/auth";
+import { Skeleton } from "../ui/skeleton";
 
 const TOTAL_STEPS = 6;
 
@@ -25,7 +29,7 @@ const STEP_TITLES = [
   "Múltiplas Inteligências",
 ];
 
-export function OnboardingForm() {
+export function OnboardingForm({}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [profile, setProfile] = useState<UserProfile>({
     learningArea: "",
@@ -37,11 +41,38 @@ export function OnboardingForm() {
   });
   const router = useRouter();
 
+  const { user } = useUser();
+
+  const syncUserMutation = api.user.syncUser.useMutation();
+  const completeOnboardingMutation = api.user.completeOnboarding.useMutation();
+
+  useEffect(() => {
+    if (user) {
+      const onboardingStatus = (
+        user.publicMetadata as { onboardingStatus?: string }
+      )?.onboardingStatus;
+
+      if (onboardingStatus === ONBOARDING_STATUS.COMPLETED) {
+        router.push("/courses");
+      }
+    }
+  }, [user, router]);
+
+  const handleCompleteOnboarding = async () => {
+    try {
+      await syncUserMutation.mutateAsync();
+      await completeOnboardingMutation.mutateAsync();
+      router.push("/courses");
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+    }
+  };
+
   const nextStep = () => {
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
-      handleSubmit();
+      handleCompleteOnboarding();
     }
   };
 
@@ -51,18 +82,6 @@ export function OnboardingForm() {
     } else {
       router.push("/");
     }
-  };
-
-  const handleSubmit = () => {
-    // Mock submit - print form data to console
-    console.log("=== ONBOARDING FORM SUBMISSION ===");
-    console.log("User Profile Data:", JSON.stringify(profile, null, 2));
-    console.log("=====================================");
-
-    // In a real app, you would send this data to your API
-    // For now, we'll redirect to a success page or dashboard
-    alert("Onboarding concluído! Dados salvos no console.");
-    router.push("/courses"); // or wherever you want to redirect
   };
 
   const selectOption = (field: keyof UserProfile, value: string) => {
@@ -158,6 +177,25 @@ export function OnboardingForm() {
     }
     return "✨ Aplicando teoria VARK e Múltiplas Inteligências para criar sua experiência única";
   };
+
+  if (
+    !user ||
+    syncUserMutation.isPending ||
+    completeOnboardingMutation.isPending
+  ) {
+    return (
+      <div className="min-h-screen bg-background">
+        <OnboardingHeader
+          currentStep={currentStep}
+          totalSteps={TOTAL_STEPS}
+          stepTitle={STEP_TITLES[currentStep - 1] || ""}
+          onPrev={prevStep}
+        />
+
+        <Skeleton className="h-[400px] w-full max-w-2xl mx-auto rounded-xl mt-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

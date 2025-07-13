@@ -7,6 +7,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { Lesson } from "./lesson";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { AITeacherChat } from "~/components/ai-teacher-chat/ai-teacher-chat";
 
 export function LearningSpace({ courseId }: { courseId: string }) {
   const router = useRouter();

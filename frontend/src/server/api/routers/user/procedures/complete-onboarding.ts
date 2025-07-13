@@ -4,8 +4,8 @@ import { eq } from "drizzle-orm";
 import { clerkClient } from "~/lib/auth";
 import { ONBOARDING_STATUS } from "~/types/auth";
 
-export const completeOnboarding = protectedProcedure
-  .mutation(async ({ ctx }) => {
+export const completeOnboarding = protectedProcedure.mutation(
+  async ({ ctx }) => {
     await clerkClient.users.updateUser(ctx.auth.userId, {
       publicMetadata: {
         onboardingStatus: ONBOARDING_STATUS.COMPLETED,
@@ -22,4 +22,5 @@ export const completeOnboarding = protectedProcedure
       .returning();
 
     return updatedUser;
-  }); 
+  }
+);
