@@ -19,6 +19,12 @@ export function SourcesList({ refreshTrigger }: SourcesListProps) {
   const { data: sourcesData, isLoading, refetch } = api.sources.getAll.useQuery({
     limit,
     offset,
+  }, {
+    // Poll every 3 seconds when there are pending documents
+    refetchInterval: (data) => {
+      const hasPending = data?.documents?.some(doc => doc.processingStatus === "pending");
+      return hasPending ? 3000 : false;
+    },
   });
 
   useEffect(() => {
@@ -27,7 +33,26 @@ export function SourcesList({ refreshTrigger }: SourcesListProps) {
     }
   }, [refreshTrigger, refetch]);
 
-  const { data: stats } = api.sources.getStats.useQuery({});
+  const { data: stats, refetch: refetchStats } = api.sources.getStats.useQuery({}, {
+    // Poll stats every 5 seconds when there are pending documents
+    refetchInterval: (data) => {
+      const hasPending = data?.processing && data.processing > 0;
+      return hasPending ? 5000 : false;
+    },
+  });
+
+  // Refetch stats when main data changes
+  useEffect(() => {
+    refetchStats();
+  }, [sourcesData, refetchStats]);
+
+  // Add mutation to fix stuck documents
+  const fixStuckDocuments = api.sources.fixStuckDocuments.useMutation({
+    onSuccess: () => {
+      refetch();
+      refetchStats();
+    },
+  });
 
   const getFileIcon = (documentType: string) => {
     switch (documentType) {
@@ -118,9 +143,21 @@ export function SourcesList({ refreshTrigger }: SourcesListProps) {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Sources</span>
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                Refresh
+              </Button>
+              {stats && stats.processing > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => fixStuckDocuments.mutate()}
+                  disabled={fixStuckDocuments.isPending}
+                >
+                  {fixStuckDocuments.isPending ? "Fixing..." : "Fix Stuck"}
+                </Button>
+              )}
+            </div>
           </CardTitle>
           <CardDescription>
             Your uploaded documents and their processing status

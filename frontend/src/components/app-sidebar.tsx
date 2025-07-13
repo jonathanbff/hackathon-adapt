@@ -34,33 +34,33 @@ import {
 
 const items = [
   {
-    title: "Home",
-    url: "/",
+    title: "Dashboard",
+    url: "/dashboard",
     icon: Home,
   },
   {
     title: "Create Course",
-    url: "/course-generation",
+    url: "/dashboard/course-generation",
     icon: Sparkles,
   },
   {
     title: "My Courses",
-    url: "/courses",
+    url: "/dashboard/courses",
     icon: BookOpen,
   },
   {
     title: "Chat",
-    url: "/chat",
+    url: "/dashboard/chat",
     icon: MessageSquare,
   },
   {
     title: "Sources",
-    url: "/sources",
+    url: "/dashboard/sources",
     icon: FileText,
   },
   {
     title: "Settings",
-    url: "/settings",
+    url: "/dashboard/settings",
     icon: Settings,
   },
 ]
