@@ -1,5 +1,5 @@
-venv/
+hacka-venv/
 .env
 frontend/start-database.sh
 frontend/src/env.js
-__pycache__/
+backend/__pycache__/
