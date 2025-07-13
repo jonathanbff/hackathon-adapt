@@ -33,18 +33,15 @@ async function getCourseProgressData(
   const completedItems = await ctx.db
     .select({ count: sql`count(*)` })
     .from(userProgress)
-    .innerJoin(
-      contentItems,
-      eq(userProgress.contentItemId, contentItems.id),
-    )
+    .innerJoin(contentItems, eq(userProgress.contentItemId, contentItems.id))
     .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
     .innerJoin(modules, eq(lessons.moduleId, modules.id))
     .where(
       and(
         eq(modules.courseId, input.courseId),
         eq(userProgress.userId, input.userId),
-        eq(userProgress.status, "completed"),
-      ),
+        eq(userProgress.status, "completed")
+      )
     );
 
   // Get due flashcards for this course
@@ -53,7 +50,7 @@ async function getCourseProgressData(
     .from(userProgress)
     .innerJoin(
       flashcards,
-      eq(userProgress.contentItemId, flashcards.contentItemId),
+      eq(userProgress.contentItemId, flashcards.contentItemId)
     )
     .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
     .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
@@ -63,8 +60,8 @@ async function getCourseProgressData(
         eq(modules.courseId, input.courseId),
         eq(userProgress.userId, input.userId),
         sql`${userProgress.nextReviewAt} <= NOW()`,
-        eq(userProgress.status, "completed"),
-      ),
+        eq(userProgress.status, "completed")
+      )
     );
 
   const total = Number(totalContentItems[0]?.count) || 0;
@@ -74,13 +71,48 @@ async function getCourseProgressData(
   return {
     totalContentItems: total,
     completedContentItems: completed,
-    progressPercentage:
-      total > 0 ? Math.round((completed / total) * 100) : 0,
+    progressPercentage: total > 0 ? Math.round((completed / total) * 100) : 0,
     dueFlashcards: due,
   };
 }
 
 export const coursesRouter = createTRPCRouter({
+  // Get all courses for catalog
+  getAllCourses: publicProcedure.query(async ({ ctx }) => {
+    const coursesData = await ctx.db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        description: courses.description,
+        status: courses.status,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+      })
+      .from(courses)
+      .where(eq(courses.status, "published"))
+      .orderBy(desc(courses.createdAt));
+
+    // Transform database courses to match the expected Course type
+    return coursesData.map((course, index) => ({
+      id: index, // Using index as number ID for compatibility
+      title: course.title,
+      description: course.description || "",
+      instructor: "EDUONE IA", // Default instructor
+      rating: 4.8, // Default rating
+      students: Math.floor(Math.random() * 2000) + 100, // Random student count
+      duration: "4-8 semanas", // Default duration
+      level: "Intermediário", // Default level
+      category: "Tecnologia", // Default category
+      tags: ["IA", "Educação"], // Default tags
+      image: `https://images.unsplash.com/photo-${
+        1555255707 + index
+      }?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80`, // Generated image URL
+      // Optional fields for enrolled courses
+      startedAt: undefined,
+      progress: undefined,
+    }));
+  }),
+
   // Get all courses for a user
   getUserCourses: publicProcedure
     .input(z.object({ userId: z.string() }))
@@ -113,7 +145,7 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         courseId: z.string(),
         userId: z.string(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       // Get course basic info
@@ -164,14 +196,14 @@ export const coursesRouter = createTRPCRouter({
           userProgress,
           and(
             eq(userProgress.contentItemId, contentItems.id),
-            eq(userProgress.userId, input.userId),
-          ),
+            eq(userProgress.userId, input.userId)
+          )
         )
         .where(eq(modules.courseId, input.courseId))
         .orderBy(
           modules.orderIndex,
           lessons.orderIndex,
-          contentItems.orderIndex,
+          contentItems.orderIndex
         );
 
       // Structure the data hierarchically
@@ -205,7 +237,7 @@ export const coursesRouter = createTRPCRouter({
         (module) => ({
           ...module,
           lessons: Array.from(module.lessons.values()),
-        }),
+        })
       );
 
       return {
@@ -222,7 +254,7 @@ export const coursesRouter = createTRPCRouter({
         contentItemId: z.string(),
         score: z.number().optional(),
         timeSpent: z.number().optional(), // in seconds
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       // Update or create progress record
@@ -232,8 +264,8 @@ export const coursesRouter = createTRPCRouter({
         .where(
           and(
             eq(userProgress.userId, input.userId),
-            eq(userProgress.contentItemId, input.contentItemId),
-          ),
+            eq(userProgress.contentItemId, input.contentItemId)
+          )
         )
         .limit(1);
 
@@ -246,14 +278,14 @@ export const coursesRouter = createTRPCRouter({
           .update(userProgress)
           .set({
             status: "completed",
-            score: input.score || currentProgress.score,
-            attempts: (currentProgress.attempts || 0) + 1,
+            score: input.score || existingProgress[0]?.score || 1.0,
+            attempts: (existingProgress[0]?.attempts || 0) + 1,
             lastAttemptAt: now,
             nextReviewAt,
             spacedRepetitionInterval: nextInterval,
             updatedAt: now,
           })
-          .where(eq(userProgress.id, currentProgress.id));
+          .where(eq(userProgress.id, existingProgress[0]!.id));
       } else {
         await ctx.db.insert(userProgress).values({
           userId: input.userId,
@@ -298,7 +330,7 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         userId: z.string(),
         moduleId: z.string(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       // Get all content items in the module
@@ -331,12 +363,14 @@ export const coursesRouter = createTRPCRouter({
         .where(
           and(
             eq(userProgress.userId, input.userId),
-            sql`${userProgress.contentItemId} IN (${moduleFlashcards.map((f) => `'${f.contentItemId}'`).join(",")})`,
-          ),
+            sql`${userProgress.contentItemId} IN (${moduleFlashcards
+              .map((f) => `'${f.contentItemId}'`)
+              .join(",")})`
+          )
         );
 
       const existingContentItems = new Set(
-        existingFlashcardProgress.map((p) => p.contentItemId),
+        existingFlashcardProgress.map((p) => p.contentItemId)
       );
 
       // Create initial progress records for new flashcards
@@ -383,10 +417,66 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         courseId: z.string(),
         userId: z.string(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
-      return await getCourseProgressData(ctx, input);
+      // Get total content items in course
+      const totalContentItems = await ctx.db
+        .select({ count: sql`count(*)` })
+        .from(contentItems)
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(eq(modules.courseId, input.courseId));
+
+      // Get completed content items
+      const completedItems = await ctx.db
+        .select({ count: sql`count(*)` })
+        .from(userProgress)
+        .innerJoin(
+          contentItems,
+          eq(userProgress.contentItemId, contentItems.id)
+        )
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(
+          and(
+            eq(modules.courseId, input.courseId),
+            eq(userProgress.userId, input.userId),
+            eq(userProgress.status, "completed")
+          )
+        );
+
+      // Get due flashcards for this course
+      const dueFlashcards = await ctx.db
+        .select({ count: sql`count(*)` })
+        .from(userProgress)
+        .innerJoin(
+          flashcards,
+          eq(userProgress.contentItemId, flashcards.contentItemId)
+        )
+        .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(
+          and(
+            eq(modules.courseId, input.courseId),
+            eq(userProgress.userId, input.userId),
+            sql`${userProgress.nextReviewAt} <= NOW()`,
+            eq(userProgress.status, "completed")
+          )
+        );
+
+      const total = Number(totalContentItems[0]?.count) || 0;
+      const completed = Number(completedItems[0]?.count) || 0;
+      const due = Number(dueFlashcards[0]?.count) || 0;
+
+      return {
+        totalContentItems: total,
+        completedContentItems: completed,
+        progressPercentage:
+          total > 0 ? Math.round((completed / total) * 100) : 0,
+        dueFlashcards: due,
+      };
     }),
 
   // Helper function to update course progress
@@ -395,10 +485,45 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         userId: z.string(),
         courseId: z.string(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
-      const progress = await getCourseProgressData(ctx, input);
+      // We need to call the procedure directly since 'this' context doesn't work here
+      const progressResult = await ctx.db
+        .select({ count: sql`count(*)` })
+        .from(contentItems)
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(eq(modules.courseId, input.courseId));
+
+      const completedResult = await ctx.db
+        .select({ count: sql`count(*)` })
+        .from(userProgress)
+        .innerJoin(
+          contentItems,
+          eq(userProgress.contentItemId, contentItems.id)
+        )
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(
+          and(
+            eq(modules.courseId, input.courseId),
+            eq(userProgress.userId, input.userId),
+            eq(userProgress.status, "completed")
+          )
+        );
+
+      const total = Number(progressResult[0]?.count) || 0;
+      const completed = Number(completedResult[0]?.count) || 0;
+      const progressPercentage =
+        total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      const progress = {
+        totalContentItems: total,
+        completedContentItems: completed,
+        progressPercentage,
+        dueFlashcards: 0, // Simplified for this helper
+      };
 
       // Update user course progress
       await ctx.db
@@ -410,8 +535,8 @@ export const coursesRouter = createTRPCRouter({
         .where(
           and(
             eq(userCourses.userId, input.userId),
-            eq(userCourses.courseId, input.courseId),
-          ),
+            eq(userCourses.courseId, input.courseId)
+          )
         );
 
       return progress;
