@@ -10,10 +10,13 @@ interface UploadStatus {
   status: "idle" | "uploading" | "processing" | "completed" | "error";
   message: string;
   documentId?: string;
-  progress?: string;
 }
 
-export function DocumentUpload() {
+interface DocumentUploadProps {
+  onUploadSuccess?: () => void;
+}
+
+export function DocumentUpload({ onUploadSuccess }: DocumentUploadProps) {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({
     status: "idle",
     message: "",
@@ -62,7 +65,6 @@ export function DocumentUpload() {
           status: "error",
           message: result.error,
         });
-        alert(result.error);
         return;
       }
 
@@ -72,18 +74,22 @@ export function DocumentUpload() {
         documentId: result.documentId,
       });
 
-      alert("Document uploaded and processing started!");
-      
-      setSelectedFile(null);
-      if (fileRef.current) {
-        fileRef.current.value = "";
-      }
+      setTimeout(() => {
+        setUploadStatus({
+          status: "completed",
+          message: "Document has been added to your sources",
+        });
+        setSelectedFile(null);
+        if (fileRef.current) {
+          fileRef.current.value = "";
+        }
+        onUploadSuccess?.();
+      }, 2000);
     } catch (error) {
       setUploadStatus({
         status: "error",
         message: "Upload failed. Please try again.",
       });
-      alert("Upload failed. Please try again.");
     }
   };
 
@@ -103,17 +109,17 @@ export function DocumentUpload() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Upload Document</CardTitle>
+          <CardTitle>Add New Source</CardTitle>
           <CardDescription>
-            Choose a PDF, DOCX, or TXT file to process through the ingestion pipeline
+            Upload documents to add them to your sources library
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
               dragOver
                 ? "border-blue-500 bg-blue-50"
                 : "border-gray-300 hover:border-gray-400"
@@ -188,36 +194,6 @@ export function DocumentUpload() {
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Processing Pipeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">1. Document validation (pass-through)</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">2. Store document in blob storage</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">3. Parse PDF to markdown (PDF only)</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">4. Extract metadata and layout</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">5. Split content and create vector embeddings</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 } 

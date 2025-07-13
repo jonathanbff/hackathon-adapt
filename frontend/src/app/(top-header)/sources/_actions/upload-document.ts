@@ -33,7 +33,7 @@ export async function uploadDocument(formData: FormData) {
 
     const documentId = randomUUID();
     const fileExtension = file.name.split('.').pop() || 'unknown';
-    const blobPath = `${userId}/test-documents/${documentId}.${fileExtension}`;
+    const blobPath = `${userId}/documents/${documentId}.${fileExtension}`;
 
     const blob = await put(blobPath, file, {
       access: "public",
@@ -64,7 +64,6 @@ export async function uploadDocument(formData: FormData) {
       metadata: {
         originalSize: file.size,
         uploadedAt: new Date().toISOString(),
-        testUpload: true,
       },
     });
 
