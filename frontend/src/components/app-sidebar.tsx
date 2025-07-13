@@ -12,6 +12,7 @@ import {
   Upload,
   MessageSquare,
   Sparkles,
+  BookOpen,
 } from "lucide-react"
 
 import {
@@ -44,6 +45,11 @@ const items = [
     title: "Create Course",
     url: "/course-generation",
     icon: Sparkles,
+  },
+  {
+    title: "My Courses",
+    url: "/courses",
+    icon: BookOpen,
   },
   {
     title: "Chat",
