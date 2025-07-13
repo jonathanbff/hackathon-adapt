@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { BookOpen, Plus, Clock } from "lucide-react";
 import Link from "next/link";
@@ -13,7 +19,7 @@ export default function CoursesPage() {
             Manage and continue your learning journey
           </p>
         </div>
-        <Link href="/dashboard/course-generation">
+        <Link href="/courses/course-generation">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Create Course
@@ -34,12 +40,11 @@ export default function CoursesPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Create personalized courses tailored to your learning goals and style.
+              Create personalized courses tailored to your learning goals and
+              style.
             </p>
-            <Link href="/dashboard/course-generation">
-              <Button className="w-full">
-                Generate Course
-              </Button>
+            <Link href="/courses/course-generation">
+              <Button className="w-full">Generate Course</Button>
             </Link>
           </CardContent>
         </Card>
@@ -57,10 +62,11 @@ export default function CoursesPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Complete your first course to see your progress and achievements here.
+            Complete your first course to see your progress and achievements
+            here.
           </p>
         </CardContent>
       </Card>
     </div>
   );
-} 
+}
