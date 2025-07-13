@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  RiArrowRightLine,
-  RiGroupLine,
-  RiPlayLine,
-  RiStarLine,
-  RiTimeLine,
-} from "@remixicon/react";
-import { useState } from "react";
+import { RiArrowRightLine, RiPlayLine, RiTimeLine } from "@remixicon/react";
+import { useRouter } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -20,18 +14,7 @@ import {
 } from "~/components/ui/card";
 
 export function CourseCard({ course }: { course: Course }) {
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Iniciante":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "Intermediário":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "Avançado":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
-    }
-  };
+  const router = useRouter();
 
   return (
     <Card
@@ -81,15 +64,24 @@ export function CourseCard({ course }: { course: Course }) {
               <RiPlayLine className="size-5 mr-2" />
               Acessar Curso
             </Button>
-            <Button variant="outline" className="w-full">
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => router.push(`/courses/${course.id}`)}
+            >
               <RiArrowRightLine className="size-5 mr-2" />
               Ver Visão Geral
             </Button>
           </div>
         ) : (
-          <Button className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-            <RiPlayLine className="size-5 mr-2" />
-            Iniciar Curso
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => router.push(`/courses/${course.id}`)}
+          >
+            <RiArrowRightLine className="size-5 mr-2" />
+            Iniciar curso
           </Button>
         )}
       </CardFooter>

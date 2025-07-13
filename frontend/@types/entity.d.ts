@@ -1,5 +1,5 @@
 type Course = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   instructor: string;
@@ -9,7 +9,6 @@ type Course = {
   level: string;
   category: string;
   tags: string[];
-  image: string;
   startedAt?: string;
   progress?: number;
 };

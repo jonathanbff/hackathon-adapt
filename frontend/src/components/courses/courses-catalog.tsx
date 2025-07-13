@@ -30,19 +30,6 @@ export function CoursesCatalog({ courses }: { courses: Course[] }) {
     return matchesSearch && matchesCategory;
   });
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Iniciante":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "Intermediário":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "Avançado":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
-    }
-  };
-
   const categories = courses.map((course) => course.category);
 
   return (
