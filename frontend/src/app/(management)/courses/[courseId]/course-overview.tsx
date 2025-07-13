@@ -12,6 +12,7 @@ import {
 } from "@remixicon/react";
 import { desc } from "drizzle-orm";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   Card,
   CardDescription,
@@ -30,12 +31,19 @@ const FEATURES = [
     href: "/learning/{id}",
   },
   {
-    title: "Mindmap",
+    title: "Quizzes",
     description:
-      "Veja o roadmap do curso e acompanhe seu progresso em cada módulo.",
-    icon: RiMindMap,
-    href: "/courses/{id}/mindmap",
+      "Teste o que aprendeu com quizzes interativos e receba feedback imediato.",
+    icon: RiBrainLine,
+    href: "/learning/{id}/quizzes",
   },
+  // {
+  //   title: "Mindmap",
+  //   description:
+  //     "Veja o roadmap do curso e acompanhe seu progresso em cada módulo.",
+  //   icon: RiMindMap,
+  //   href: "/courses/{id}/mindmap",
+  // },
   {
     title: "Flashcards",
     description:
@@ -44,26 +52,19 @@ const FEATURES = [
     href: "/courses/{id}/flashcards",
   },
   {
-    title: "Quizzes",
-    description:
-      "Teste o que aprendeu com quizzes interativos e receba feedback imediato.",
-    icon: RiBrainLine,
-    href: "/courses/{id}/quizzes",
-  },
-  {
     title: "Converse com Professor AI",
     description:
       "Converse com o Professor AI para tirar dúvidas e obter explicações detalhadas sobre o conteúdo do curso",
     icon: RiVideoChatLine,
     href: "/courses/{id}/voice-call",
   },
-  {
-    title: "Materiais de Apoio",
-    description:
-      "Acesse os materiais de apoio do curso, como PDFs e links úteis.",
-    icon: RiFolder3Line,
-    href: "/courses/{id}/resources",
-  },
+  // {
+  //   title: "Materiais de Apoio",
+  //   description:
+  //     "Acesse os materiais de apoio do curso, como PDFs e links úteis.",
+  //   icon: RiFolder3Line,
+  //   href: "/courses/{id}/resources",
+  // },
 ];
 
 export function CourseOverview({ courseId }: { courseId: string }) {
@@ -124,6 +125,8 @@ export function CourseOverview({ courseId }: { courseId: string }) {
       </div>
 
       <section className="flex-1 px-4 py-5 max-w-5xl w-full mx-auto">
+        {/* Podcast Generation Section */}
+
         <div className="bg-gradient-to-br from-primary/10 via-primary-glow/5 to-transparent rounded-2xl p-8 border border-border/50 animate-fade-in">
           <h1 className="text-4xl font-bold text-foreground mb-4">
             {course?.title}

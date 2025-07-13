@@ -1,11 +1,12 @@
 import { CourseOverview } from "./course-overview";
 
 interface CoursePageProps {
-  params: {
+  params: Promise<{
     courseId: string;
-  };
+  }>;
 }
 
-export default function CoursePage({ params }: CoursePageProps) {
-  return <CourseOverview courseId={params.courseId} />;
+export default async function CoursePage({ params }: CoursePageProps) {
+  const { courseId } = await params;
+  return <CourseOverview courseId={courseId} />;
 }

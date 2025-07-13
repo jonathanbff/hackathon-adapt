@@ -8,7 +8,7 @@ import { useUser } from "~/hooks/use-user";
 import { api } from "~/trpc/react";
 import { TavusAPI } from "~/components/video-agent/tavus";
 import type { ConversationResponse, ConversationRequest } from "~/types/tavus";
-
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const VideoChat = () => {
   const params = useParams<{ courseId: string }>();
   const { courseId: course } = params;
@@ -20,25 +20,27 @@ export const VideoChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
-  const { data: courseStructure } = api.courses.getCourseWithProgress.useQuery({
-    userId,
-    courseId: course,
-  });
+  const { data: courseStructure, isLoading: isLoadingCourseStructure } =
+    api.courses.getCourseWithProgress.useQuery({
+      userId,
+      courseId: course,
+    });
 
-  const { data: courseInfo } = api.courseGeneration.getCourse.useQuery({
-    courseId: course,
-  });
+  const { data: courseInfo, isLoading } =
+    api.courseGeneration.getCourse.useQuery({
+      courseId: course,
+    });
 
   const apiKey = process.env.NEXT_PUBLIC_TAVUS_API_KEY;
 
-  const createConversation = async () => {
+  const createConversation = async (retried = 0) => {
     if (!apiKey) {
       setError("API key not configured");
       return;
     }
 
     // Create fallback conversation if course data is not available
-    const useFallback = !courseStructure || !courseInfo;
+    const useFallback = !courseStructure && !courseInfo;
 
     setLoading(true);
     setError("");
@@ -197,19 +199,39 @@ How can I help you today?`,
         };
       }
 
+      const promises =
+        (await tavusAPI.listConversations()).conversations?.map(
+          ({ conversation_id }) => tavusAPI.endConversation(conversation_id),
+        ) || [];
+      for await (const promise of promises) {
+        await promise;
+        await sleep(100);
+      }
+      console.log(request);
       const newConversation = await tavusAPI.createConversation(request);
       setConversation(newConversation);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Error creating conversation",
-      );
+      if (retried < 3) {
+        await sleep(1000);
+        await createConversation(retried + 1);
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Error creating conversation",
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (apiKey && !conversation && !loading) {
+    if (
+      apiKey &&
+      !conversation &&
+      !loading &&
+      !isLoading &&
+      !isLoadingCourseStructure
+    ) {
       createConversation();
     }
   }, [courseStructure, courseInfo, apiKey]);

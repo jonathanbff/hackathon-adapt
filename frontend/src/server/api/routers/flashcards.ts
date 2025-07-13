@@ -163,7 +163,7 @@ export const flashcardsRouter = createTRPCRouter({
         .where(
           and(
             eq(modules.courseId, input.courseId),
-            // lt(userProgress.attempts, 1),
+            lt(userProgress.attempts, 1),
           ),
         )
 
@@ -443,5 +443,167 @@ export const flashcardsRouter = createTRPCRouter({
         initializedCount: newProgressRecords.length,
         totalFlashcards: moduleFlashcards.length,
       };
+    }),
+
+  // Generate flashcards for existing content using Modal API
+  generateFlashcardsForContent: publicProcedure
+    .input(
+      z.object({
+        contentItemId: z.string(),
+        userId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Get the content item with lesson and module context
+      const contentItemWithContext = await ctx.db
+        .select({
+          contentItem: {
+            id: contentItems.id,
+            title: contentItems.title,
+            content: contentItems.content,
+            contentType: contentItems.contentType,
+          },
+          lesson: {
+            id: lessons.id,
+            title: lessons.title,
+          },
+          module: {
+            id: modules.id,
+            title: modules.title,
+          },
+        })
+        .from(contentItems)
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(eq(contentItems.id, input.contentItemId))
+        .limit(1);
+
+      if (!contentItemWithContext || contentItemWithContext.length === 0) {
+        throw new Error("Content item not found");
+      }
+
+      const context = contentItemWithContext[0]!;
+
+      // Check if flashcards already exist for this content item
+      const existingFlashcards = await ctx.db
+        .select({ count: flashcards.id })
+        .from(flashcards)
+        .where(eq(flashcards.contentItemId, input.contentItemId));
+
+      if (existingFlashcards.length > 0) {
+        throw new Error("Flashcards already exist for this content item");
+      }
+
+      try {
+        // Prepare content for Modal API
+        const courseContent = {
+          title: context.contentItem.title,
+          introduction: context.lesson.title,
+          mainContent: context.contentItem.content,
+          keyPoints: [],
+          practicalExercises: [],
+          summary: context.contentItem.title,
+          furtherReading: [],
+        };
+
+        // Call Modal API to generate flashcards
+        const modalResponse = await fetch(
+          "https://davisuga-chief--edu-one-generate-flashcards.modal.run",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              course_content: courseContent,
+            }),
+          },
+        );
+
+        if (!modalResponse.ok) {
+          throw new Error(
+            `Modal API error: ${modalResponse.status} ${modalResponse.statusText}`,
+          );
+        }
+
+        const modalData = await modalResponse.json();
+
+        if (modalData.error) {
+          throw new Error(`Modal API returned error: ${modalData.error}`);
+        }
+
+        const generatedFlashcards = modalData.flashcards;
+
+        if (!Array.isArray(generatedFlashcards)) {
+          throw new Error("Invalid flashcards format from Modal API");
+        }
+
+        // Validate and parse flashcards
+        const validFlashcards = [];
+        for (const card of generatedFlashcards) {
+          try {
+            let frontContent, backContent;
+
+            if (typeof card === "object" && card !== null) {
+              frontContent =
+                card.front || card.question || card.frontContent || "";
+              backContent = card.back || card.answer || card.backContent || "";
+            } else {
+              continue;
+            }
+
+            if (frontContent && backContent) {
+              validFlashcards.push({
+                frontContent: String(frontContent).trim(),
+                backContent: String(backContent).trim(),
+              });
+            }
+          } catch (error) {
+            // Skip invalid flashcards
+          }
+        }
+
+        if (validFlashcards.length === 0) {
+          throw new Error("No valid flashcards generated from content");
+        }
+
+        // Insert flashcards into database
+        const insertedFlashcards = await ctx.db
+          .insert(flashcards)
+          .values(
+            validFlashcards.map((card) => ({
+              contentItemId: input.contentItemId,
+              frontContent: card.frontContent,
+              backContent: card.backContent,
+            })),
+          )
+          .returning({
+            id: flashcards.id,
+            frontContent: flashcards.frontContent,
+            backContent: flashcards.backContent,
+          });
+
+        return {
+          success: true,
+          flashcardsGenerated: insertedFlashcards.length,
+          flashcards: insertedFlashcards,
+          contentItem: {
+            id: context.contentItem.id,
+            title: context.contentItem.title,
+          },
+          lesson: {
+            id: context.lesson.id,
+            title: context.lesson.title,
+          },
+          module: {
+            id: context.module.id,
+            title: context.module.title,
+          },
+        };
+      } catch (error) {
+        throw new Error(
+          `Failed to generate flashcards: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
     }),
 });
