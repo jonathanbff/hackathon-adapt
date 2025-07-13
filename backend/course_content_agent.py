@@ -8,8 +8,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langgraph.graph import MessageGraph
 
-from .flashcards_agent import generate_flashcards
-from .quizzes_agent import generate_quiz
+from flashcards_agent import generate_flashcards
+from quizzes_agent import generate_quiz
 
 
 def build_graph() -> MessageGraph:

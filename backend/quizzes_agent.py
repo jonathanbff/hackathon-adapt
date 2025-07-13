@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from typing import List
 
@@ -23,20 +24,41 @@ def build_graph() -> MessageGraph:
     return builder.compile()
 
 
-def generate_quiz(content: str) -> dict:
-    """Generate a quiz based on the given course content."""
+def generate_quiz(content_json: str) -> dict:
+    """Generate a quiz based on the given course content JSON string."""
     prompt = (
-        "Crie um quiz de múltipla escolha baseado no seguinte conteúdo:\n"
-        f"{content}\n"
-        "Responda em JSON no formato: {\n  'questions': [\n"
-        "    {'question': '...', 'question_type': 'multiple-choice', 'options': ['...'], 'correct_answer': '...'}, ...]\n}"
+        f"Com base no seguinte conteúdo de curso:\n{content_json}\n"
+        "Gere um quiz com perguntas de múltipla escolha para cada módulo. "
+        "Responda em JSON no formato: {\n  \"questions\": [\n"
+        "    {\"question\": \"...\", \"question_type\": \"multiple-choice\", \"options\": [\"...\", ...], \"correct_answer\": \"...\"}, ...]\n}"
     )
 
     graph = build_graph()
     messages = [HumanMessage(content=prompt)]
     result = graph.invoke(messages)
     response = result[-1].content
-    return json.loads(response)
+
+    # Extrai apenas o JSON da resposta
+    match = re.search(r"\{[\s\S]*\}", response)
+    if match:
+        response = match.group(0)
+
+    # Troca aspas simples por duplas
+    response = response.replace("'", '"')
+
+    # Escapa aspas duplas internas em valores de propriedades
+    def escape_inner_quotes(match):
+        value = match.group(0)
+        return '"' + value[1:-1].replace('"', r'\"') + '"'
+
+    response = re.sub(r'"([^"]*"(?:[^"]*"[^"]*")*)"', escape_inner_quotes, response)
+
+    try:
+        return json.loads(response)
+    except json.JSONDecodeError:
+        print("Erro ao decodificar JSON do quiz. Resposta recebida do modelo:")
+        print(response)
+        raise
 
 
 def main() -> None:
