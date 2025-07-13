@@ -124,7 +124,9 @@ export function Lesson({
                   </div>
 
                   <Button className="w-full" asChild>
-                    <Link href="/quizzes">Fazer Quizz</Link>
+                    <Link href={`/learning/${courseId}/quizzes`}>
+                      Fazer Quizz
+                    </Link>
                   </Button>
                 </div>
               </CardContent>

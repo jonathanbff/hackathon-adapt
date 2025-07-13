@@ -22,16 +22,6 @@ import {
 } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { AudioPlayer } from "~/components/ui/audio-player";
 import { api } from "~/trpc/react";
 
@@ -48,7 +38,7 @@ const FEATURES = [
     description:
       "Teste o que aprendeu com quizzes interativos e receba feedback imediato.",
     icon: RiBrainLine,
-    href: "/courses/{id}/quizzes",
+    href: "/learning/{id}/quizzes",
   },
   // {
   //   title: "Mindmap",
@@ -115,7 +105,7 @@ export function CourseOverview({ courseId }: { courseId: string }) {
             target_audience: "estudantes interessados no curso",
             format_style: "Conversa educacional entre especialista e mediador",
           }),
-        },
+        }
       );
 
       if (!response.ok) {

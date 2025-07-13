@@ -1,16 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { RiBookOpenLine, RiGitRepositoryLine } from "@remixicon/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
+import { ScrollArea } from "@radix-ui/react-scroll-area";
+import { Lesson } from "./lesson";
 
 export function LearningSpace({ courseId }: { courseId: string }) {
-  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedLesson = searchParams.get("lesson");
   const { data: courseAndRelations, isLoading } =
     api.courses.getCourseWithModulesAndLessons.useQuery({
       courseId,
     });
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !selectedLesson &&
+      courseAndRelations &&
+      courseAndRelations.modules &&
+      courseAndRelations.modules.length > 0
+    ) {
+      const firstModule = courseAndRelations.modules[0];
+      if (firstModule?.lessons?.length > 0) {
+        const firstLesson = firstModule.lessons[0];
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("lesson", firstLesson.id);
+        router.replace(`?${params.toString()}`);
+      }
+    }
+  }, [
+    isLoading,
+    selectedLesson,
+    courseAndRelations?.modules,
+    router,
+    searchParams,
+  ]);
 
   if (isLoading) {
     return (
@@ -66,52 +95,65 @@ export function LearningSpace({ courseId }: { courseId: string }) {
             <div className="flex items-center gap-2">
               <RiBookOpenLine className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-muted-foreground">
-                Módulos do Curso
+                Módulos
               </span>
             </div>
           </div>
 
-          <ul className="divide-y divide-border">
-            {courseAndRelations?.modules.map((module) => (
-              <li
-                key={module.id}
-                className="px-4 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer"
-              >
-                {module.title}
+          <ScrollArea>
+            <ul className="divide-y divide-border">
+              {courseAndRelations?.modules.map((module) => (
+                <li
+                  key={module.id}
+                  className="px-4 py-2 hover:text-accent-foreground"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <span>
+                      {module.orderIndex} - {module.title}
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <span>{module.title}</span>
-                </div>
+                  <div className="space-y-1 mt-2">
+                    {module.lessons.map((lesson: Leasson) => (
+                      <button
+                        key={lesson.id}
+                        className={`w-full text-left text-sm p-2 rounded-lg transition-colors flex items-center gap-2 ${
+                          selectedLesson === lesson.id
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        }`}
+                        onClick={() => {
+                          const params = new URLSearchParams(
+                            searchParams.toString()
+                          );
+                          params.set("lesson", lesson.id);
+                          router.push(`?${params.toString()}`);
+                        }}
+                      >
+                        <div className="w-2 h-2 rounded-full bg-muted" />
+                        {lesson.title}
 
-                {module.lessons.map((lesson: Leasson) => (
-                  <button
-                    key={lesson.id}
-                    className={`w-full text-left text-sm p-2 rounded-lg transition-colors flex items-center gap-2 ${
-                      selectedLesson === lesson.id
-                        ? "bg-primary/10 text-primary border border-primary/20"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        lesson.completed ? "bg-green-500" : "bg-muted"
-                      }`}
-                    />
-                    {lesson.title}
-
-                    {selectedLesson === lesson.id && (
-                      <div className="ml-auto">
-                        <div className="w-1 h-1 rounded-full bg-primary" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </li>
-            ))}
-          </ul>
+                        {selectedLesson === lesson.id && (
+                          <div className="ml-auto">
+                            <div className="w-1 h-1 rounded-full bg-primary" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
         </div>
 
-        <Skeleton className="h-full aspect-video rounded-xl" />
+        <div className="h-full aspect-video rounded-xl">
+          {selectedLesson ? (
+            <Lesson lessonId={selectedLesson} courseId={courseId} />
+          ) : (
+            <Skeleton className="h-full w-full aspect-video rounded-xl" />
+          )}
+        </div>
       </section>
     </div>
   );
