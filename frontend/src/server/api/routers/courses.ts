@@ -569,4 +569,89 @@ export const coursesRouter = createTRPCRouter({
 
       return course[0];
     }),
+
+  // Get course by ID with modules and lessons
+  getCourseWithModulesAndLessons: publicProcedure
+    .input(z.object({ courseId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Get course basic info
+      const course = await ctx.db
+        .select()
+        .from(courses)
+        .where(eq(courses.id, input.courseId))
+        .limit(1);
+
+      if (!course[0]) {
+        throw new Error("Course not found");
+      }
+
+      // Get modules with lessons
+      const moduleData = await ctx.db
+        .select({
+          module: {
+            id: modules.id,
+            title: modules.title,
+            description: modules.description,
+            orderIndex: modules.orderIndex,
+            createdAt: modules.createdAt,
+            updatedAt: modules.updatedAt,
+          },
+          lesson: {
+            id: lessons.id,
+            title: lessons.title,
+            description: lessons.description,
+            orderIndex: lessons.orderIndex,
+            createdAt: lessons.createdAt,
+            updatedAt: lessons.updatedAt,
+          },
+        })
+        .from(modules)
+        .innerJoin(lessons, eq(modules.id, lessons.moduleId))
+        .where(eq(modules.courseId, input.courseId))
+        .orderBy(modules.orderIndex, lessons.orderIndex);
+
+      // Structure the data hierarchically
+      const moduleMap = new Map();
+
+      moduleData.forEach((row) => {
+        if (!moduleMap.has(row.module.id)) {
+          moduleMap.set(row.module.id, {
+            ...row.module,
+            lessons: [],
+          });
+        }
+
+        const module = moduleMap.get(row.module.id);
+        module.lessons.push(row.lesson);
+      });
+
+      // Convert map to array
+      const structuredModules = Array.from(moduleMap.values());
+
+      return {
+        course: course[0],
+        modules: structuredModules,
+      };
+    }),
+
+  // Get content items by lesson ID
+  getContentItemsByLessonId: publicProcedure
+    .input(z.object({ lessonId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const contentItemsData = await ctx.db
+        .select({
+          id: contentItems.id,
+          title: contentItems.title,
+          content: contentItems.content,
+          contentType: contentItems.contentType,
+          orderIndex: contentItems.orderIndex,
+          createdAt: contentItems.createdAt,
+          updatedAt: contentItems.updatedAt,
+        })
+        .from(contentItems)
+        .where(eq(contentItems.lessonId, input.lessonId))
+        .orderBy(contentItems.orderIndex);
+
+      return contentItemsData;
+    }),
 });

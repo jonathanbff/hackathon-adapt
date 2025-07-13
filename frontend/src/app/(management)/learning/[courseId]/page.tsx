@@ -1,3 +1,5 @@
+import { LearningSpace } from "./learning-space";
+
 interface CoursePageProps {
   params: {
     courseId: string;
@@ -5,5 +7,5 @@ interface CoursePageProps {
 }
 
 export default function LearningPage({ params }: CoursePageProps) {
-  return <div />;
+  return <LearningSpace courseId={params.courseId} />;
 }
