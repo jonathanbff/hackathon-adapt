@@ -4,7 +4,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { CopilotChat } from "@copilotkit/react-ui";
 
 interface Message {
   id: string;
@@ -82,7 +81,64 @@ export function ChatAssistant({ onClose }: ChatAssistantProps) {
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <CopilotChat />
+
+      {/* Messages */}
+      <ScrollArea className="flex-1 px-4">
+        <div className="space-y-4 py-4">
+          {messages.map((message) => (
+            <div key={message.id} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex gap-2 max-w-[80%] ${message.isUser ? 'flex-row-reverse' : ''}`}>
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarFallback className={message.isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}>
+                    {message.isUser ? 'U' : 'AI'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={`rounded-lg px-3 py-2 ${
+                  message.isUser 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  <p className="text-sm">{message.content}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {message.timestamp.toLocaleTimeString('pt-BR', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="flex gap-2 max-w-[80%]">
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarFallback className="bg-muted">AI</AvatarFallback>
+                </Avatar>
+                <div className="bg-muted text-muted-foreground rounded-lg px-3 py-2">
+                  <p className="text-sm">Digitando...</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Input */}
+      <div className="p-4 border-t border-border">
+        <div className="flex gap-2">
+          <Input
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Digite sua mensagem..."
+            className="flex-1"
+          />
+          <Button onClick={handleSendMessage} size="icon">
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

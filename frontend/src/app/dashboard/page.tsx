@@ -1,116 +1,88 @@
+"use client";
+
+import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
-import { BookOpen, MessageSquare, FileText, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { api } from "~/trpc/react";
+import { AuthGuard } from "~/components/auth";
 
 export default function DashboardPage() {
+  const { user } = useUser();
+  const { data: userProfile, isLoading } = api.user.getProfile.useQuery();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Welcome to Your Dashboard</h1>
-        <p className="text-muted-foreground">
-          Start your learning journey with personalized courses and AI assistance.
-        </p>
-      </div>
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <AuthGuard />
+        </div>
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Profile</CardTitle>
+              <CardDescription>Your account information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Name:</span>
+                <span className="text-sm">{userProfile?.name || "Not set"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Email:</span>
+                <span className="text-sm">{userProfile?.email || "Not set"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Username:</span>
+                <span className="text-sm">{userProfile?.username || "Not set"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Onboarding:</span>
+                <span className="text-sm">
+                  {userProfile?.onboardingCompleted ? "Completed" : "Pending"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Create Course</CardTitle>
-            <Sparkles className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">AI Powered</div>
-            <p className="text-xs text-muted-foreground">
-              Generate personalized courses with AI
-            </p>
-            <Link href="/dashboard/course-generation">
-              <Button size="sm" className="mt-2">
-                Get Started
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">My Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              Courses in progress
-            </p>
-            <Link href="/dashboard/courses">
-              <Button size="sm" className="mt-2">
-                View All
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Chat Assistant</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">24/7</div>
-            <p className="text-xs text-muted-foreground">
-              AI learning assistant
-            </p>
-            <Link href="/dashboard/chat">
-              <Button size="sm" className="mt-2">
-                Start Chat
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sources</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              Documents uploaded
-            </p>
-            <Link href="/dashboard/sources">
-              <Button size="sm" className="mt-2">
-                Upload
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your latest learning activities</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              No recent activity. Start by creating your first course!
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Learning Progress</CardTitle>
-            <CardDescription>Track your educational journey</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Complete your first course to see progress tracking here.
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Clerk Information</CardTitle>
+              <CardDescription>Information from Clerk</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Clerk ID:</span>
+                <span className="text-sm font-mono">{user?.id}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">First Name:</span>
+                <span className="text-sm">{user?.firstName || "Not set"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Last Name:</span>
+                <span className="text-sm">{user?.lastName || "Not set"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Email Verified:</span>
+                <span className="text-sm">
+                  {user?.emailAddresses[0]?.verification?.status === "verified" ? "Yes" : "No"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

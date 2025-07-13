@@ -16,6 +16,66 @@ import {
   getInitialReviewSchedule,
 } from "~/server/services/spaced-repetition";
 
+// Helper function to get course progress data
+async function getCourseProgressData(
+  ctx: { db: typeof import("~/server/db").db },
+  input: { courseId: string; userId: string }
+) {
+  // Get total content items in course
+  const totalContentItems = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(contentItems)
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(eq(modules.courseId, input.courseId));
+
+  // Get completed content items
+  const completedItems = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(userProgress)
+    .innerJoin(contentItems, eq(userProgress.contentItemId, contentItems.id))
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(
+      and(
+        eq(modules.courseId, input.courseId),
+        eq(userProgress.userId, input.userId),
+        eq(userProgress.status, "completed")
+      )
+    );
+
+  // Get due flashcards for this course
+  const dueFlashcards = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(userProgress)
+    .innerJoin(
+      flashcards,
+      eq(userProgress.contentItemId, flashcards.contentItemId)
+    )
+    .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(
+      and(
+        eq(modules.courseId, input.courseId),
+        eq(userProgress.userId, input.userId),
+        sql`${userProgress.nextReviewAt} <= NOW()`,
+        eq(userProgress.status, "completed")
+      )
+    );
+
+  const total = Number(totalContentItems[0]?.count) || 0;
+  const completed = Number(completedItems[0]?.count) || 0;
+  const due = Number(dueFlashcards[0]?.count) || 0;
+
+  return {
+    totalContentItems: total,
+    completedContentItems: completed,
+    progressPercentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+    dueFlashcards: due,
+  };
+}
+
 export const coursesRouter = createTRPCRouter({
   // Get all courses for catalog
   getAllCourses: publicProcedure.query(async ({ ctx }) => {
@@ -213,6 +273,7 @@ export const coursesRouter = createTRPCRouter({
       const { nextReviewAt, nextInterval } = getInitialReviewSchedule();
 
       if (existingProgress.length > 0) {
+        const currentProgress = existingProgress[0]!;
         await ctx.db
           .update(userProgress)
           .set({

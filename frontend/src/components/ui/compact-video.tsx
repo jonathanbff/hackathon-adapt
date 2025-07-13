@@ -4,8 +4,8 @@ import { Card, CardContent } from "./card";
 import { Button } from "./button";
 
 interface CompactVideoProps {
-  title: string;
-  channel: string;
+  title: string | { title: string };
+  channel: string | { name: string };
   duration: string;
   thumbnail?: string;
   description?: string;
@@ -44,7 +44,7 @@ export function CompactVideo({
           <div className="relative aspect-video bg-black rounded-t-lg overflow-hidden">
             <iframe
               src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-              title={title}
+              title={typeof title === 'string' ? title : (title?.title || 'Untitled')}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className="w-full h-full"
@@ -79,7 +79,7 @@ export function CompactVideo({
               <>
                 <img
                   src={thumbnailUrl}
-                  alt={title}
+                  alt={typeof title === 'string' ? title : (title?.title || 'Untitled')}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;

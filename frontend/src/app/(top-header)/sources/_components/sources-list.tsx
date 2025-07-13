@@ -19,13 +19,18 @@ export function SourcesList({ refreshTrigger }: SourcesListProps) {
   const { data: sourcesData, isLoading, refetch } = api.sources.getAll.useQuery({
     limit,
     offset,
-  }, {
-    // Poll every 3 seconds when there are pending documents
-    refetchInterval: (data) => {
-      const hasPending = data?.documents?.some(doc => doc.processingStatus === "pending");
-      return hasPending ? 3000 : false;
-    },
   });
+
+  // Poll every 3 seconds when there are pending documents
+  useEffect(() => {
+    const hasPending = sourcesData?.documents?.some(doc => doc.processingStatus === "pending");
+    if (hasPending) {
+      const interval = setInterval(() => {
+        refetch();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [sourcesData, refetch]);
 
   useEffect(() => {
     if (refreshTrigger && refreshTrigger > 0) {
@@ -33,13 +38,18 @@ export function SourcesList({ refreshTrigger }: SourcesListProps) {
     }
   }, [refreshTrigger, refetch]);
 
-  const { data: stats, refetch: refetchStats } = api.sources.getStats.useQuery({}, {
-    // Poll stats every 5 seconds when there are pending documents
-    refetchInterval: (data) => {
-      const hasPending = data?.processing && data.processing > 0;
-      return hasPending ? 5000 : false;
-    },
-  });
+  const { data: stats, refetch: refetchStats } = api.sources.getStats.useQuery({});
+
+  // Poll stats every 5 seconds when there are pending documents
+  useEffect(() => {
+    const hasPending = stats?.processing && stats.processing > 0;
+    if (hasPending) {
+      const interval = setInterval(() => {
+        refetchStats();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [stats, refetchStats]);
 
   // Refetch stats when main data changes
   useEffect(() => {
