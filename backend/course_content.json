@@ -1,0 +1,49 @@
+{
+  "modules": [
+    {
+      "title": "Módulo 1: Introdução às Redes Neurais",
+      "lessons": [
+        "Aula 1: O que é uma Rede Neural?",
+        "Aula 2: História e Evolução das Redes Neurais",
+        "Aula 3: Aplicações práticas de Redes Neurais",
+        "Aula 4: Tipos de Redes Neurais"
+      ]
+    },
+    {
+      "title": "Módulo 2: Fundamentos de Redes Neurais",
+      "lessons": [
+        "Aula 1: Neurônios e Perceptrons",
+        "Aula 2: Funções de Ativação",
+        "Aula 3: Redes Neurais Feedforward",
+        "Aula 4: Backpropagation"
+      ]
+    },
+    {
+      "title": "Módulo 3: Redes Neurais Convolucionais",
+      "lessons": [
+        "Aula 1: Introdução às Redes Neurais Convolucionais",
+        "Aula 2: Convolution e Pooling",
+        "Aula 3: Dropout e Normalização",
+        "Aula 4: Implementação de uma Rede Neural Convolucional"
+      ]
+    },
+    {
+      "title": "Módulo 4: Redes Neurais Recurrentes",
+      "lessons": [
+        "Aula 1: Introdução às Redes Neurais Recorrentes",
+        "Aula 2: Long Short-Term Memory (LSTM)",
+        "Aula 3: Gated Recurrent Unit (GRU)",
+        "Aula 4: Implementação de uma Rede Neural Recorrente"
+      ]
+    },
+    {
+      "title": "Módulo 5: Deep Learning Prático",
+      "lessons": [
+        "Aula 1: Ferramentas e Bibliotecas",
+        "Aula 2: Treinamento e Avaliação de Modelos",
+        "Aula 3: Fine-Tuning e Transfer Learning",
+        "Aula 4: Projeto Prático Final"
+      ]
+    }
+  ]
+}
