@@ -2,14 +2,21 @@
 
 import { useUser } from "@clerk/nextjs";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import { OnboardingForm } from "~/components/onboarding";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 
 export default function OnboardingPage() {
   const { user } = useUser();
   const router = useRouter();
-  
+
   const syncUserMutation = api.user.syncUser.useMutation();
   const completeOnboardingMutation = api.user.completeOnboarding.useMutation();
 
@@ -22,6 +29,8 @@ export default function OnboardingPage() {
       console.error("Error completing onboarding:", error);
     }
   };
+
+  // return <OnboardingForm />;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -38,19 +47,21 @@ export default function OnboardingPage() {
               Welcome, {user?.firstName || user?.fullName || "there"}!
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Click the button below to complete your onboarding and start using the platform.
+              Click the button below to complete your onboarding and start using
+              the platform.
             </p>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={handleCompleteOnboarding}
-            disabled={syncUserMutation.isPending || completeOnboardingMutation.isPending}
+            disabled={
+              syncUserMutation.isPending || completeOnboardingMutation.isPending
+            }
             className="w-full"
           >
             {syncUserMutation.isPending || completeOnboardingMutation.isPending
               ? "Setting up your account..."
-              : "Complete Onboarding"
-            }
+              : "Complete Onboarding"}
           </Button>
         </CardContent>
       </Card>

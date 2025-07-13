@@ -13,3 +13,11 @@ type Course = {
   startedAt?: string;
   progress?: number;
 };
+
+type GenerateCourseFormSchema = {
+  title: string;
+  description: string;
+  goals: string;
+  duration: string;
+  sources: File[];
+};

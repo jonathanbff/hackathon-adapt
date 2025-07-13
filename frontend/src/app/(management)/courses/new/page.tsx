@@ -3,21 +3,47 @@
 import { useState, Fragment } from "react";
 import { RiArrowLeftSLine, RiCloseLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
 
 import { CourseForm } from "~/components/courses/new/course-form";
 import { Button } from "~/components/ui/button";
 
 import * as Stepper from "~/components/ui/horizontal-stepper";
 import { Progress } from "~/components/ui/progress";
+import { courseGenerationInputSchema } from "~/server/db/schemas";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Wand2 } from "lucide-react";
+import { GeneratingCourse } from "~/components/courses/new/generating-course";
 
 const STEPS = [
   { id: 1, name: "Informações Basicas", indicator: "1" },
-  { id: 3, name: "Conteúdo", indicator: "2" },
-  { id: 3, name: "Revisar", indicator: "3" },
+  { id: 2, name: "Objetivos", indicator: "2" },
+  { id: 3, name: "Duração", indicator: "3" },
+  { id: 4, name: "Conteúdo", indicator: "4" },
+  { id: 5, name: "Revisar", indicator: "5" },
 ];
+
+type FormValues = z.infer<typeof courseGenerationInputSchema>;
+type ScopedFormValues = Pick<
+  FormValues,
+  "title" | "description" | "goals" | "duration" | "aiPreferences"
+> & {
+  sources: File[];
+  generateAllContent: boolean;
+};
 
 export default function NewCoursePage() {
   const [activeStep, setActiveStep] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [activeAgents, setActiveAgents] = useState<string[]>([]);
+  const [formValues, setFormValues] = useState<GenerateCourseFormSchema>({
+    title: "",
+    description: "",
+    goals: "",
+    duration: "",
+    sources: [],
+  });
 
   const router = useRouter();
 
@@ -31,6 +57,76 @@ export default function NewCoursePage() {
   const progressValue = ((activeStep + 1) / STEPS.length) * 100;
 
   const currentStep = STEPS[activeStep];
+
+  const nextStep = () => {
+    if (activeStep < STEPS.length - 1) {
+      setActiveStep((prev) => prev + 1);
+    }
+
+    if (activeStep === STEPS.length - 1) {
+      handleCreateCourse();
+    }
+  };
+
+  const prevStep = () => {
+    if (activeStep > 0) {
+      setActiveStep((prev) => prev - 1);
+    }
+  };
+
+  const canProceed = () => {
+    switch (activeStep) {
+      case 0:
+        return (
+          formValues.title.trim() !== "" && formValues.description.trim() !== ""
+        );
+      case 1:
+        return formValues.goals !== "";
+      case 2:
+        return formValues.duration !== "";
+      case 3:
+        return true; // Materials optional
+      case 4:
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const handleCreateCourse = async () => {
+    setIsGenerating(true);
+    setGenerationProgress(0);
+
+    // Simulate AI agents working
+    const agentSequence = [
+      "content-creator",
+      "structure-architect",
+      "personalization-expert",
+      "assessment-designer",
+    ];
+
+    for (let i = 0; i < agentSequence.length; i++) {
+      setActiveAgents([agentSequence[i] as string]);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setGenerationProgress((i + 1) * 25);
+    }
+
+    setActiveAgents([]);
+    setGenerationProgress(100);
+
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 1000);
+  };
+
+  if (isGenerating) {
+    return (
+      <GeneratingCourse
+        generationProgress={generationProgress}
+        activeAgents={activeAgents}
+      />
+    );
+  }
 
   return (
     <div className="relative z-50 mx-auto flex w-full flex-1 flex-col self-stretch">
@@ -109,7 +205,55 @@ export default function NewCoursePage() {
       </div>
 
       <section className="flex-1 px-4 py-5 max-w-5xl w-full mx-auto">
-        <CourseForm />
+        <AnimatePresence mode="wait">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <CourseForm
+              formValues={formValues}
+              setFormValues={setFormValues}
+              currentStep={activeStep}
+              onNext={() => {}}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        <motion.div
+          className="mt-8 flex justify-between items-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={activeStep === 0}
+          >
+            Voltar
+          </Button>
+
+          <Button
+            onClick={nextStep}
+            disabled={!canProceed()}
+            size="lg"
+            className="px-8"
+          >
+            {activeStep === STEPS.length - 1 ? (
+              <>
+                <Wand2 className="w-4 h-4 mr-2" />
+                Criar Curso com IA
+              </>
+            ) : (
+              <>
+                Continuar
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
+        </motion.div>
       </section>
     </div>
   );
