@@ -13,12 +13,15 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./users";
+import { lessonVideos } from "./content";
 
 export const courses = pgTable("courses", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   status: varchar("status", { length: 50 }).default("draft").notNull(),
+  generationStatus: varchar("generation_status", { length: 50 }).default("not_started").notNull(),
+  difficulty: varchar("difficulty", { length: 50 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -35,6 +38,8 @@ export const modules = pgTable("modules", {
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   orderIndex: integer("order_index").notNull(),
+  isContentGenerated: boolean("is_content_generated").default(false).notNull(),
+  generatedLessonsCount: integer("generated_lessons_count").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -51,6 +56,9 @@ export const lessons = pgTable("lessons", {
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   orderIndex: integer("order_index").notNull(),
+  isContentGenerated: boolean("is_content_generated").default(false).notNull(),
+  hasQuiz: boolean("has_quiz").default(false).notNull(),
+  hasExamples: boolean("has_examples").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -227,7 +235,7 @@ export const lessonsRelations = relations(lessons, ({ one, many }) => ({
   contentItems: many(contentItems),
 }));
 
-export const contentItemsRelations = relations(contentItems, ({ one }) => ({
+export const contentItemsRelations = relations(contentItems, ({ one, many }) => ({
   lesson: one(lessons, {
     fields: [contentItems.lessonId],
     references: [lessons.id],
@@ -276,6 +284,10 @@ export const generationStepsRelations = relations(
 
 export const aiAgentsRelations = relations(aiAgents, ({ many }) => ({
   generationSteps: many(generationSteps),
+}));
+
+export const youtubeVideosRelations = relations(youtubeVideos, ({ many }) => ({
+  lessonVideos: many(lessonVideos),
 }));
 
 export const insertCourseSchema = createInsertSchema(courses);

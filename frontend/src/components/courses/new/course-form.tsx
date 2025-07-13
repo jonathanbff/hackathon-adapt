@@ -137,7 +137,9 @@ export function CourseForm({
                   onClick={() => {
                     setFormValues((prev) => ({
                       ...prev,
-                      goals: goal.id,
+                      goals: prev.goals.includes(goal.id)
+                        ? prev.goals.filter(g => g !== goal.id)
+                        : [...prev.goals, goal.id],
                     }));
                   }}
                 >
@@ -160,8 +162,8 @@ export function CourseForm({
       return (
         <div className="space-y-8">
           <CourseFormStepHeader
-            title="Duração"
-            description="Escolha a duração ideal para o curso"
+            title="Duração e Formato"
+            description="Escolha a duração e o formato ideal para o curso"
             icon={RiTimeLine}
           />
 
@@ -197,7 +199,7 @@ export function CourseForm({
                         onClick={() =>
                           setFormValues((prev) => ({
                             ...prev,
-                            duration: duration.id,
+                            duration: duration.id as any,
                           }))
                         }
                       >
@@ -209,6 +211,44 @@ export function CourseForm({
                         </div>
                       </Card>
                     </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Difficulty */}
+            <Card>
+              <CardContent className="p-6">
+                <Label className="text-lg font-medium mb-4 block">
+                  Nível de Dificuldade
+                </Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { id: "beginner", label: "Iniciante", desc: "Sem experiência prévia" },
+                    { id: "intermediate", label: "Intermediário", desc: "Alguma experiência" },
+                    { id: "advanced", label: "Avançado", desc: "Muita experiência" },
+                  ].map((level) => (
+                    <Card
+                      key={level.id}
+                      className={`p-4 cursor-pointer transition-all ${
+                        formValues.difficulty === level.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() =>
+                        setFormValues((prev) => ({
+                          ...prev,
+                          difficulty: level.id as any,
+                        }))
+                      }
+                    >
+                      <div className="text-center space-y-1">
+                        <p className="font-medium">{level.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {level.desc}
+                        </p>
+                      </div>
+                    </Card>
                   ))}
                 </div>
               </CardContent>
@@ -254,6 +294,13 @@ export function CourseForm({
                   />
                 </label>
               </Button>
+              {formValues.sources.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    {formValues.sources.length} arquivo(s) selecionado(s)
+                  </p>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
@@ -292,15 +339,34 @@ export function CourseForm({
                     Objetivos
                   </Label>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    <Badge variant="secondary">{formValues.goals}</Badge>
+                    {formValues.goals.map((goal) => (
+                      <Badge key={goal} variant="secondary">{goal}</Badge>
+                    ))}
                   </div>
                 </div>
+                
                 <div>
                   <Label className="text-sm text-muted-foreground">
                     Duração
                   </Label>
                   <p className="font-medium">{formValues.duration}</p>
                 </div>
+
+                <div>
+                  <Label className="text-sm text-muted-foreground">
+                    Nível de Dificuldade
+                  </Label>
+                  <p className="font-medium">{formValues.difficulty}</p>
+                </div>
+
+                {formValues.sources.length > 0 && (
+                  <div>
+                    <Label className="text-sm text-muted-foreground">
+                      Materiais
+                    </Label>
+                    <p className="font-medium">{formValues.sources.length} arquivo(s)</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

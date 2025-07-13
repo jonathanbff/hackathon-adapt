@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import React, { useState, Fragment } from "react";
 import { RiArrowLeftSLine, RiCloseLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
@@ -14,6 +14,8 @@ import { courseGenerationInputSchema } from "~/server/db/schemas";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Wand2 } from "lucide-react";
 import { GeneratingCourse } from "~/components/courses/new/generating-course";
+import { api } from "~/trpc/react";
+import { useUser } from "@clerk/nextjs";
 
 const STEPS = [
   { id: 1, name: "Informações Basicas", indicator: "1" },
@@ -37,15 +39,55 @@ export default function NewCoursePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [activeAgents, setActiveAgents] = useState<string[]>([]);
+  const [runId, setRunId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<GenerateCourseFormSchema>({
     title: "",
     description: "",
-    goals: "",
-    duration: "",
+    goals: [],
+    duration: "1-week",
+    difficulty: "beginner",
+    format: ["video", "text"],
+    structure: {
+      modules: 3,
+      lessonsPerModule: 4,
+      assessments: true,
+      projects: false,
+    },
+    materials: {
+      documents: [],
+      videos: [],
+      audios: [],
+      images: [],
+    },
+    aiPreferences: {
+      tone: "professional",
+      interactivity: "medium",
+      examples: "practical examples with real-world applications",
+      pacing: "moderate pace with clear explanations",
+    },
+    userProfileContext: {
+      learningArea: "technology",
+      learningStyle: "visual",
+      currentLevel: "beginner",
+      multipleIntelligences: [],
+      timeAvailable: "1-2 hours per day",
+      preferredSchedule: "flexible",
+    },
     sources: [],
   });
 
   const router = useRouter();
+  const { user } = useUser();
+  
+  // tRPC mutations
+  const generateCourseMutation = api.courseGeneration.generate.useMutation();
+  const { data: runStatus, isLoading: isLoadingStatus } = api.courseGeneration.getStatus.useQuery(
+    { runId: runId! },
+    { 
+      enabled: !!runId,
+      refetchInterval: isGenerating ? 2000 : false, // Poll every 2 seconds when generating
+    }
+  );
 
   const getState = (index: number) => {
     if (activeStep > index) return "completed";
@@ -81,9 +123,9 @@ export default function NewCoursePage() {
           formValues.title.trim() !== "" && formValues.description.trim() !== ""
         );
       case 1:
-        return formValues.goals !== "";
+        return formValues.goals.length > 0;
       case 2:
-        return formValues.duration !== "";
+        return true; // Duration has default value
       case 3:
         return true; // Materials optional
       case 4:
@@ -94,30 +136,80 @@ export default function NewCoursePage() {
   };
 
   const handleCreateCourse = async () => {
-    setIsGenerating(true);
-    setGenerationProgress(0);
-
-    // Simulate AI agents working
-    const agentSequence = [
-      "content-creator",
-      "structure-architect",
-      "personalization-expert",
-      "assessment-designer",
-    ];
-
-    for (let i = 0; i < agentSequence.length; i++) {
-      setActiveAgents([agentSequence[i] as string]);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setGenerationProgress((i + 1) * 25);
+    if (!user?.id) {
+      console.error("User not authenticated");
+      return;
     }
 
-    setActiveAgents([]);
-    setGenerationProgress(100);
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    setActiveAgents(["content-creator"]);
 
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 1000);
+    try {
+      // Convert form data to the format expected by the trigger
+      const generationRequest: FormValues = {
+        title: formValues.title,
+        description: formValues.description,
+        goals: formValues.goals as ("career" | "skill" | "hobby" | "certification" | "business" | "teaching")[],
+        duration: formValues.duration,
+        difficulty: formValues.difficulty,
+        format: formValues.format as ("video" | "audio" | "text" | "interactive" | "practical" | "visual" | "presentation" | "quiz")[],
+        structure: formValues.structure,
+        materials: formValues.materials,
+        aiPreferences: formValues.aiPreferences,
+        userProfileContext: formValues.userProfileContext,
+      };
+
+      const result = await generateCourseMutation.mutateAsync({
+        userId: user.id,
+        generationRequest,
+      });
+
+      setRunId(result.runId);
+      
+      // Simulate agent progress while we wait for real updates
+      const agentSequence = [
+        "content-creator",
+        "structure-architect", 
+        "personalization-expert",
+        "assessment-designer",
+      ];
+
+      for (let i = 0; i < agentSequence.length; i++) {
+        setActiveAgents([agentSequence[i] as string]);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setGenerationProgress((i + 1) * 25);
+      }
+
+    } catch (error) {
+      console.error("Failed to start course generation:", error);
+      setIsGenerating(false);
+      setGenerationProgress(0);
+      setActiveAgents([]);
+      // TODO: Show error toast/notification to user
+    }
   };
+
+  // Handle run status updates
+  React.useEffect(() => {
+    if (runStatus?.isCompleted) {
+      setIsGenerating(false);
+      setGenerationProgress(100);
+      setActiveAgents([]);
+      
+      // Navigate to the generated course
+      if (runStatus.output?.courseId) {
+        router.push(`/dashboard/courses/${runStatus.output.courseId}`);
+      } else {
+        router.push("/dashboard");
+      }
+    } else if (runStatus?.isFailed) {
+      setIsGenerating(false);
+      setGenerationProgress(0);
+      setActiveAgents([]);
+      // TODO: Show error toast/notification to user
+    }
+  }, [runStatus, router]);
 
   if (isGenerating) {
     return (
