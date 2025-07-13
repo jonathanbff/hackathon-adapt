@@ -198,15 +198,15 @@ export function QuizCard({
                       showFeedback &&
                         selectedAnswer === index &&
                         isCorrect &&
-                        "border-green-500 bg-green-50",
+                        "border-green-500 text-green-500 bg-green-50",
                       showFeedback &&
                         selectedAnswer === index &&
                         !isCorrect &&
-                        "border-red-500 bg-red-50",
+                        "border-red-500 text-red-500 bg-red-50",
                       showFeedback &&
                         index === currentQuestion.correct &&
-                        "border-green-500 bg-green-50",
-                      showFeedback ? "cursor-not-allowed" : "cursor-pointer"
+                        "border-green-500 text-green-500 bg-green-50",
+                      showFeedback ? "cursor-not-allowed" : "cursor-pointer",
                     )}
                   >
                     <div className="flex items-center justify-between">
@@ -253,7 +253,7 @@ export function QuizCard({
                     showFeedback &&
                       option.value === currentQuestion.correct &&
                       "border-green-500 bg-green-50",
-                    showFeedback ? "cursor-not-allowed" : "cursor-pointer"
+                    showFeedback ? "cursor-not-allowed" : "cursor-pointer",
                   )}
                 >
                   <div className="flex items-center justify-between">
@@ -281,7 +281,7 @@ export function QuizCard({
               "p-4 rounded-lg border-l-4",
               isCorrect
                 ? "bg-green-50 border-green-500"
-                : "bg-red-50 border-red-500"
+                : "bg-red-50 border-red-500",
             )}
           >
             <div className="flex items-center gap-2 mb-2">
@@ -293,7 +293,7 @@ export function QuizCard({
               <span
                 className={cn(
                   "font-medium",
-                  isCorrect ? "text-green-800" : "text-red-800"
+                  isCorrect ? "text-green-800" : "text-red-800",
                 )}
               >
                 {isCorrect ? "Correto!" : "Incorreto!"}
@@ -305,7 +305,7 @@ export function QuizCard({
             <p
               className={cn(
                 "text-sm",
-                isCorrect ? "text-green-700" : "text-red-700"
+                isCorrect ? "text-green-700" : "text-red-700",
               )}
             >
               {currentQuestion.explanation}
