@@ -1,0 +1,167 @@
+# tRPC API Patterns & Best Practices
+
+## Router Organization
+- Organize routers by domain in `src/server/api/routers/`
+- Use nested routers for complex domains (e.g., `user/procedures/`)
+- Export routers from `src/server/api/root.ts`
+
+## Procedure Patterns
+
+### Input Validation
+Always use Zod schemas for input validation:
+```typescript
+.input(z.object({
+  courseId: z.string(),
+  userId: z.string(),
+}))
+```
+
+### Database Queries
+Use Drizzle ORM with proper error handling:
+```typescript
+.query(async ({ input }) => {
+  const course = await db.query.courses.findFirst({
+    where: eq(courses.id, input.courseId),
+  });
+  
+  if (!course) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Course not found",
+    });
+  }
+  
+  return course;
+})
+```
+
+### Background Jobs
+Trigger background jobs from mutations:
+```typescript
+.mutation(async ({ input }) => {
+  // Create database record first
+  const course = await db.insert(courses).values(input).returning();
+  
+  // Then trigger background processing
+  await trigger.send("generate-course-content", {
+    courseId: course[0].id,
+    ...input,
+  });
+  
+  return course[0];
+})
+```
+
+## Client Usage Patterns
+
+### React Query Integration
+Use the generated tRPC hooks:
+```typescript
+const { data: course, isLoading } = api.courses.getById.useQuery({
+  courseId: params.courseId,
+});
+
+const createCourse = api.courses.create.useMutation({
+  onSuccess: () => {
+    // Invalidate relevant queries
+    void utils.courses.getAll.invalidate();
+  },
+});
+```
+
+### Optimistic Updates
+For better UX, use optimistic updates:
+```typescript
+const updateCourse = api.courses.update.useMutation({
+  onMutate: async (newData) => {
+    await utils.courses.getById.cancel({ courseId: newData.id });
+    
+    const previousCourse = utils.courses.getById.getData({ courseId: newData.id });
+    
+    utils.courses.getById.setData({ courseId: newData.id }, {
+      ...previousCourse,
+      ...newData,
+    });
+    
+    return { previousCourse };
+  },
+  onError: (err, newData, context) => {
+    utils.courses.getById.setData(
+      { courseId: newData.id },
+      context?.previousCourse
+    );
+  },
+});
+```
+
+## Error Handling
+
+### Server-Side Errors
+Use appropriate TRPCError codes:
+```typescript
+import { TRPCError } from "@trpc/server";
+
+// For validation errors
+throw new TRPCError({
+  code: "BAD_REQUEST",
+  message: "Invalid input data",
+});
+
+// For unauthorized access
+throw new TRPCError({
+  code: "UNAUTHORIZED",
+  message: "Must be authenticated",
+});
+
+// For missing resources
+throw new TRPCError({
+  code: "NOT_FOUND",
+  message: "Resource not found",
+});
+```
+
+### Client-Side Error Handling
+Handle errors gracefully in components:
+```typescript
+const { data, error, isLoading } = api.courses.getById.useQuery(
+  { courseId },
+  {
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  }
+);
+```
+
+## Performance Optimization
+
+### Query Batching
+tRPC automatically batches queries made within 10ms of each other.
+
+### Prefetching
+Prefetch data for better UX:
+```typescript
+// In server components
+await api.courses.getById.prefetch({ courseId });
+
+// In client components
+useEffect(() => {
+  void utils.courses.getById.prefetch({ courseId });
+}, [courseId]);
+```
+
+### Infinite Queries
+For paginated data:
+```typescript
+const {
+  data,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+} = api.courses.getAll.useInfiniteQuery(
+  { limit: 10 },
+  {
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+     }
+ );
+ ```

@@ -1,0 +1,276 @@
+# Database Schema Patterns with Drizzle ORM
+
+## Schema Organization
+- Place all schemas in `src/server/db/schemas/`
+- Organize by domain (users, courses, chat, etc.)
+- Export all schemas from `src/server/db/schemas/index.ts`
+
+## Table Definition Patterns
+
+### Basic Table Structure
+```typescript
+import { pgTable, uuid, text, timestamp, boolean } from "drizzle-orm/pg-core";
+
+export const courses = pgTable("courses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description"),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+```
+
+### Naming Conventions
+- Use snake_case for column names
+- Use singular table names (e.g., `user` not `users`)
+- Use descriptive foreign key names (e.g., `course_id` not `courseId`)
+
+### Primary Keys
+Always use UUID primary keys for security and scalability:
+```typescript
+id: uuid("id").primaryKey().defaultRandom(),
+```
+
+### Timestamps
+Include standard audit columns:
+```typescript
+createdAt: timestamp("created_at").defaultNow(),
+updatedAt: timestamp("updated_at").defaultNow(),
+```
+
+## Relationship Patterns
+
+### One-to-Many Relationships
+```typescript
+// Parent table
+export const courses = pgTable("courses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+});
+
+// Child table
+export const lessons = pgTable("lessons", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  courseId: uuid("course_id").notNull().references(() => courses.id),
+  title: text("title").notNull(),
+});
+
+// Define relations
+export const coursesRelations = relations(courses, ({ many }) => ({
+  lessons: many(lessons),
+}));
+
+export const lessonsRelations = relations(lessons, ({ one }) => ({
+  course: one(courses, {
+    fields: [lessons.courseId],
+    references: [courses.id],
+  }),
+}));
+```
+
+### Many-to-Many Relationships
+```typescript
+// Junction table
+export const userCourses = pgTable("user_courses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  courseId: uuid("course_id").notNull().references(() => courses.id),
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+});
+
+// Relations
+export const userCoursesRelations = relations(userCourses, ({ one }) => ({
+  user: one(users, {
+    fields: [userCourses.userId],
+    references: [users.id],
+  }),
+  course: one(courses, {
+    fields: [userCourses.courseId],
+    references: [courses.id],
+  }),
+}));
+```
+
+## Data Types
+
+### JSON Columns
+For complex data structures:
+```typescript
+import { json } from "drizzle-orm/pg-core";
+
+export const courses = pgTable("courses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  metadata: json("metadata").$type<{
+    difficulty: string;
+    tags: string[];
+    requirements: string[];
+  }>(),
+});
+```
+
+### Enums
+For predefined values:
+```typescript
+import { pgEnum } from "drizzle-orm/pg-core";
+
+export const courseStatusEnum = pgEnum("course_status", [
+  "draft",
+  "published",
+  "archived",
+]);
+
+export const courses = pgTable("courses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  status: courseStatusEnum("status").default("draft"),
+});
+```
+
+### Text vs VARCHAR
+Use `text()` for most string fields unless you need specific length constraints:
+```typescript
+// Preferred
+title: text("title").notNull(),
+
+// Only when length constraint is needed
+slug: varchar("slug", { length: 255 }).notNull(),
+```
+
+## Indexes and Constraints
+
+### Unique Constraints
+```typescript
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  username: text("username").notNull().unique(),
+});
+```
+
+### Composite Indexes
+```typescript
+import { index } from "drizzle-orm/pg-core";
+
+export const userCourses = pgTable("user_courses", {
+  // columns...
+}, (table) => ({
+  userCourseIdx: index("user_course_idx").on(table.userId, table.courseId),
+}));
+```
+
+### Check Constraints
+```typescript
+import { check } from "drizzle-orm/pg-core";
+
+export const courses = pgTable("courses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  rating: integer("rating"),
+}, (table) => ({
+  ratingCheck: check("rating_check", sql`${table.rating} >= 1 AND ${table.rating} <= 5`),
+}));
+```
+
+## Query Patterns
+
+### Basic Queries
+```typescript
+// Find single record
+const course = await db.query.courses.findFirst({
+  where: eq(courses.id, courseId),
+});
+
+// Find multiple records
+const publishedCourses = await db.query.courses.findMany({
+  where: eq(courses.isPublished, true),
+});
+```
+
+### Joins with Relations
+```typescript
+// Query with relations
+const courseWithLessons = await db.query.courses.findFirst({
+  where: eq(courses.id, courseId),
+  with: {
+    lessons: {
+      orderBy: asc(lessons.order),
+    },
+  },
+});
+```
+
+### Complex Queries
+```typescript
+// Complex filtering
+const courses = await db.query.courses.findMany({
+  where: and(
+    eq(courses.isPublished, true),
+    or(
+      ilike(courses.title, `%${searchTerm}%`),
+      ilike(courses.description, `%${searchTerm}%`)
+    )
+  ),
+  orderBy: desc(courses.createdAt),
+  limit: 10,
+  offset: (page - 1) * 10,
+});
+```
+
+## Migration Patterns
+
+### Column Additions
+```typescript
+// Add nullable column first
+await db.schema.alterTable("courses").addColumn("slug", text("slug"));
+
+// Populate data
+await db.update(courses).set({ slug: generateSlug(title) });
+
+// Make it not null
+await db.schema.alterTable("courses").alterColumn("slug", {
+  setNotNull: true,
+});
+```
+
+### Data Migrations
+```typescript
+// In a migration file
+export async function up(db: DrizzleDB) {
+  // Structure changes first
+  await db.schema.createTable(newTable);
+  
+  // Data migrations
+  const records = await db.select().from(oldTable);
+  await db.insert(newTable).values(
+    records.map(record => transformRecord(record))
+  );
+}
+```
+
+## Performance Considerations
+
+### Efficient Queries
+- Use `findFirst()` instead of `findMany()` when you need only one record
+- Use appropriate indexes for frequently queried columns
+- Avoid N+1 queries by using relations properly
+
+### Pagination
+```typescript
+const getPaginatedCourses = async (page: number, limit: number) => {
+  const offset = (page - 1) * limit;
+  
+  const [courses, totalCount] = await Promise.all([
+    db.query.courses.findMany({
+      limit,
+      offset,
+      orderBy: desc(courses.createdAt),
+    }),
+    db.select({ count: sql`count(*)` }).from(courses),
+  ]);
+  
+  return {
+    courses,
+    totalCount: totalCount[0].count,
+    hasMore: offset + courses.length < totalCount[0].count,
+     };
+ };
+ ```

@@ -1,0 +1,384 @@
+# Background Jobs & Trigger.dev Patterns
+
+## Job Organization
+- Place all background jobs in `src/server/trigger/`
+- Organize by domain (course-generation, ingestion, etc.)
+- Use sequential numbering for workflow steps (00-, 01-, 02-, etc.)
+- Export all jobs from domain index files
+
+## Job Definition Patterns
+
+### Basic Job Structure
+```typescript
+import { task } from "@trigger.dev/sdk/v3";
+import { z } from "zod";
+
+export const validateGenerationRequestTask = task({
+  id: "validate-generation-request",
+  retry: {
+    maxAttempts: 3,
+    factor: 2,
+    minTimeoutInMs: 1000,
+    maxTimeoutInMs: 10000,
+  },
+  run: async (payload: z.infer<typeof inputSchema>) => {
+    // Job implementation
+    return result;
+  },
+});
+```
+
+### Input Validation
+Always validate job inputs with Zod schemas:
+```typescript
+const inputSchema = z.object({
+  courseId: z.string().uuid(),
+  userId: z.string().uuid(),
+  title: z.string().min(1).max(255),
+  description: z.string().optional(),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]),
+});
+
+type JobInput = z.infer<typeof inputSchema>;
+```
+
+### Error Handling
+Implement proper error handling with retries:
+```typescript
+export const generateContentTask = task({
+  id: "generate-content",
+  retry: {
+    maxAttempts: 3,
+    factor: 2,
+    minTimeoutInMs: 1000,
+    maxTimeoutInMs: 30000,
+  },
+  run: async (payload: JobInput) => {
+    try {
+      // Main job logic
+      const result = await processContent(payload);
+      return result;
+    } catch (error) {
+      // Log the error
+      console.error("Content generation failed:", error);
+      
+      // Re-throw to trigger retry
+      throw error;
+    }
+  },
+});
+```
+
+## Workflow Patterns
+
+### Sequential Workflow
+Use sequential numbering for ordered steps:
+```typescript
+// 00-validate-generation-request.ts
+export const validateGenerationRequestTask = task({
+  id: "validate-generation-request",
+  run: async (payload) => {
+    // Validation logic
+    return validatedPayload;
+  },
+});
+
+// 01-create-course-structure.ts
+export const createCourseStructureTask = task({
+  id: "create-course-structure",
+  run: async (payload) => {
+    // Structure creation logic
+    return courseStructure;
+  },
+});
+
+// 02-generate-lesson-content.ts
+export const generateLessonContentTask = task({
+  id: "generate-lesson-content",
+  run: async (payload) => {
+    // Content generation logic
+    return lessons;
+  },
+});
+```
+
+### Batch Processing
+For processing multiple items:
+```typescript
+export const generateLessonContentBatchTask = task({
+  id: "generate-lesson-content-batch",
+  run: async (payload: { lessons: LessonInput[] }) => {
+    const results = await Promise.all(
+      payload.lessons.map(async (lesson) => {
+        try {
+          return await generateLessonContent(lesson);
+        } catch (error) {
+          console.error(`Failed to generate lesson ${lesson.id}:`, error);
+          return { id: lesson.id, error: error.message };
+        }
+      })
+    );
+    
+    return results;
+  },
+});
+```
+
+### Main Orchestration Task
+Create a main task that orchestrates the entire workflow:
+```typescript
+export const generateEntireCourseTask = task({
+  id: "generate-entire-course",
+  run: async (payload: CourseGenerationInput) => {
+    // Step 1: Validate request
+    const validatedPayload = await validateGenerationRequestTask.trigger(payload);
+    
+    // Step 2: Create course structure
+    const courseStructure = await createCourseStructureTask.trigger({
+      ...validatedPayload,
+    });
+    
+    // Step 3: Generate lesson content
+    const lessons = await generateLessonContentBatchTask.trigger({
+      lessons: courseStructure.lessons,
+    });
+    
+    // Step 4: Search for videos
+    const videos = await searchVideosBatchTask.trigger({
+      lessons: lessons.filter(l => !l.error),
+    });
+    
+    // Step 5: Generate quizzes
+    const quizzes = await generateQuizzesBatchTask.trigger({
+      lessons: lessons.filter(l => !l.error),
+    });
+    
+    // Step 6: Finalize course
+    const finalCourse = await finalizeCourseTask.trigger({
+      courseId: payload.courseId,
+      lessons,
+      videos,
+      quizzes,
+    });
+    
+    return finalCourse;
+  },
+});
+```
+
+## Database Integration
+
+### Updating Progress
+Update database records to track progress:
+```typescript
+export const generateLessonContentTask = task({
+  id: "generate-lesson-content",
+  run: async (payload: { lessonId: string; content: string }) => {
+    // Update lesson status to "processing"
+    await db.update(lessons).set({
+      status: "processing",
+      updatedAt: new Date(),
+    }).where(eq(lessons.id, payload.lessonId));
+    
+    try {
+      // Generate content
+      const generatedContent = await generateContent(payload.content);
+      
+      // Update lesson with generated content
+      await db.update(lessons).set({
+        content: generatedContent,
+        status: "completed",
+        updatedAt: new Date(),
+      }).where(eq(lessons.id, payload.lessonId));
+      
+      return { lessonId: payload.lessonId, success: true };
+    } catch (error) {
+      // Update lesson status to "failed"
+      await db.update(lessons).set({
+        status: "failed",
+        error: error.message,
+        updatedAt: new Date(),
+      }).where(eq(lessons.id, payload.lessonId));
+      
+      throw error;
+    }
+  },
+});
+```
+
+### Atomic Operations
+Use database transactions for atomic operations:
+```typescript
+export const finalizeCourseTask = task({
+  id: "finalize-course",
+  run: async (payload: { courseId: string; lessons: any[] }) => {
+    await db.transaction(async (tx) => {
+      // Update course status
+      await tx.update(courses).set({
+        status: "published",
+        publishedAt: new Date(),
+      }).where(eq(courses.id, payload.courseId));
+      
+      // Update all lessons
+      for (const lesson of payload.lessons) {
+        await tx.update(lessons).set({
+          status: "published",
+        }).where(eq(lessons.id, lesson.id));
+      }
+    });
+    
+    return { courseId: payload.courseId, published: true };
+  },
+});
+```
+
+## External Service Integration
+
+### API Calls with Retries
+When integrating with external services:
+```typescript
+export const searchVideoTask = task({
+  id: "search-video",
+  retry: {
+    maxAttempts: 3,
+    factor: 2,
+    minTimeoutInMs: 1000,
+    maxTimeoutInMs: 10000,
+  },
+  run: async (payload: { query: string; duration?: string }) => {
+    try {
+      const response = await fetch(`https://api.youtube.com/search`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${process.env.YOUTUBE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        params: {
+          q: payload.query,
+          type: "video",
+          duration: payload.duration || "medium",
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`YouTube API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.items?.[0] || null;
+    } catch (error) {
+      console.error("Video search failed:", error);
+      throw error;
+    }
+  },
+});
+```
+
+### AI Service Integration
+For AI-powered content generation:
+```typescript
+export const generateQuizTask = task({
+  id: "generate-quiz",
+  run: async (payload: { lessonContent: string; difficulty: string }) => {
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    
+    try {
+      const response = await client.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "Generate a quiz based on the lesson content...",
+          },
+          {
+            role: "user",
+            content: payload.lessonContent,
+          },
+        ],
+        max_tokens: 2000,
+        temperature: 0.7,
+      });
+      
+      const quizContent = response.choices[0]?.message?.content;
+      if (!quizContent) {
+        throw new Error("No quiz content generated");
+      }
+      
+      return JSON.parse(quizContent);
+    } catch (error) {
+      console.error("Quiz generation failed:", error);
+      throw error;
+    }
+  },
+});
+```
+
+## Performance Optimization
+
+### Job Queuing
+Use appropriate queue configurations:
+```typescript
+export const heavyProcessingTask = task({
+  id: "heavy-processing",
+  queue: {
+    name: "heavy-processing",
+    concurrencyLimit: 2, // Limit concurrent executions
+  },
+  run: async (payload) => {
+    // Heavy processing logic
+  },
+});
+```
+
+### Memory Management
+For memory-intensive operations:
+```typescript
+export const processLargeDataTask = task({
+  id: "process-large-data",
+  machine: {
+    preset: "large-1x", // Use appropriate machine size
+  },
+  run: async (payload) => {
+    // Process large data sets
+  },
+});
+```
+
+## Monitoring and Logging
+
+### Structured Logging
+Use structured logging for better observability:
+```typescript
+export const generateContentTask = task({
+  id: "generate-content",
+  run: async (payload) => {
+    console.log("Starting content generation", {
+      courseId: payload.courseId,
+      lessonCount: payload.lessons.length,
+      timestamp: new Date().toISOString(),
+    });
+    
+    try {
+      const result = await processContent(payload);
+      
+      console.log("Content generation completed", {
+        courseId: payload.courseId,
+        duration: Date.now() - startTime,
+        success: true,
+      });
+      
+      return result;
+    } catch (error) {
+      console.error("Content generation failed", {
+        courseId: payload.courseId,
+        error: error.message,
+        stack: error.stack,
+      });
+      
+      throw error;
+    }
+     },
+ });
+ ```

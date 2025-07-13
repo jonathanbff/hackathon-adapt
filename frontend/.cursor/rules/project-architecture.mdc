@@ -1,0 +1,84 @@
+# Project Architecture Guide
+
+## Core Technology Stack
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript (strict mode)
+- **Database**: PostgreSQL with Drizzle ORM
+- **API**: tRPC for type-safe full-stack APIs
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Background Jobs**: Trigger.dev for async processing
+- **State Management**: TanStack Query (React Query)
+- **Package Manager**: pnpm
+
+## Directory Structure Patterns
+
+### App Router Structure (`src/app/`)
+- **Route Groups**: Use parentheses for logical grouping without affecting URL structure
+  - `(top-header)/` - Main application with shared header
+  - `(chat)/` - Chat-specific routes with different layout
+  - `(management)/` - Course management interface
+- **Private Components**: Use `_components/` for route-specific components
+- **API Routes**: Place in `api/` directory, use tRPC handler pattern
+
+### Server Architecture (`src/server/`)
+- **API Layer**: tRPC routers in `api/routers/` organized by domain
+- **Database**: Drizzle schemas in `db/schemas/` with proper relations
+- **Background Jobs**: Trigger.dev tasks in `trigger/` with sequential numbering
+- **Services**: Business logic in `services/` as pure functions
+
+### Component Organization (`src/components/`)
+- **UI Components**: shadcn/ui components in `ui/` directory
+- **Feature Components**: Organized by domain (auth, courses, chat, etc.)
+- **Layouts**: Reusable layout components for consistent structure
+
+## Key Architectural Patterns
+
+### 1. Domain-Driven Structure
+Organize code by business domains (courses, users, chat, etc.) rather than technical layers.
+
+### 2. Type-Safe APIs
+All API communication uses tRPC for end-to-end type safety between client and server.
+
+### 3. Background Processing
+Complex operations (course generation, document processing) use Trigger.dev for reliability.
+
+### 4. Database-First Design
+Database schemas define the data model, with TypeScript types derived from schemas.
+
+### 5. Component Composition
+UI built with atomic, reusable components following shadcn/ui patterns.
+
+## Development Guidelines
+
+### File Naming
+- Use kebab-case for files and directories
+- Add descriptive prefixes for related files (e.g., `course-card.tsx`, `course-form.tsx`)
+- Use `_components/` for private/internal components
+
+### Import Organization
+```typescript
+// 1. External libraries
+import { NextRequest } from "next/server";
+import { z } from "zod";
+
+// 2. Internal utilities/config
+import { db } from "~/server/db";
+import { api } from "~/trpc/server";
+
+// 3. Components (if applicable)
+import { Button } from "~/components/ui/button";
+
+// 4. Types
+import type { Course } from "~/server/db/schemas";
+```
+
+### Error Handling
+- Use tRPC error handling with proper error codes
+- Implement proper error boundaries in React components
+- Log errors appropriately for debugging
+
+### Performance Considerations
+- Use React.memo() for expensive components
+- Implement proper loading states
+- Use Suspense boundaries for async operations
+- Optimize database queries with proper indexes

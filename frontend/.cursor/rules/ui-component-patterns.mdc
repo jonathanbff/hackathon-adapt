@@ -1,0 +1,239 @@
+# UI Component Patterns & Standards
+
+## Component Framework
+- **Always use shadcn/ui** components as the foundation
+- Follow **atomic design principles** with reusable, focused components
+- Store reusable UI components in `src/components/ui/`
+
+## Icon Usage
+- **Use Lucide icons** exclusively for consistency
+- Import specific icons to optimize bundle size
+- Prefer semantic icon names over decorative ones
+
+```typescript
+import { ChevronRight, User, BookOpen } from "lucide-react";
+```
+
+## Component Structure
+
+### Atomic Components
+Create small, focused components with single responsibilities:
+```typescript
+interface BadgeProps {
+  variant: "default" | "secondary" | "destructive";
+  children: React.ReactNode;
+}
+
+export function Badge({ variant, children }: BadgeProps) {
+  return (
+    <span className={cn(badgeVariants({ variant }))}>
+      {children}
+    </span>
+  );
+}
+```
+
+### Compound Components
+For complex UI patterns, use compound components:
+```typescript
+const Card = {
+  Root: CardRoot,
+  Header: CardHeader,
+  Content: CardContent,
+  Footer: CardFooter,
+};
+
+// Usage
+<Card.Root>
+  <Card.Header>Title</Card.Header>
+  <Card.Content>Content</Card.Content>
+</Card.Root>
+```
+
+## Styling Patterns
+
+### Tailwind CSS Classes
+- Use consistent spacing scale (4, 8, 12, 16, 20, 24, 32, 40, 48, 64)
+- Prefer semantic color classes over arbitrary values
+- Use responsive design utilities
+
+### Class Name Utilities
+Always use the `cn()` utility for conditional classes:
+```typescript
+import { cn } from "~/lib/utils";
+
+export function Button({ variant, size, className, ...props }) {
+  return (
+    <button
+      className={cn(
+        buttonVariants({ variant, size }),
+        className
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+## Form Patterns
+
+### Form Components
+Use shadcn/ui form components with proper validation:
+```typescript
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+});
+
+export function CourseForm() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Course Title</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
+```
+
+## Layout Patterns
+
+### Grid Systems
+Use CSS Grid for complex layouts:
+```typescript
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {courses.map((course) => (
+    <CourseCard key={course.id} course={course} />
+  ))}
+</div>
+```
+
+### Flexible Layouts
+Use Flexbox for component alignment:
+```typescript
+<div className="flex items-center justify-between">
+  <h2 className="text-2xl font-bold">Courses</h2>
+  <Button>Create New</Button>
+</div>
+```
+
+## State Management
+
+### Loading States
+Always provide loading states for async operations:
+```typescript
+export function CourseList() {
+  const { data: courses, isLoading } = api.courses.getAll.useQuery();
+
+  if (isLoading) {
+    return <CourseListSkeleton />;
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {courses?.map((course) => (
+        <CourseCard key={course.id} course={course} />
+      ))}
+    </div>
+  );
+}
+```
+
+### Error Boundaries
+Implement proper error handling:
+```typescript
+export function CourseCard({ course }: { course: Course }) {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader>
+        {!imageError ? (
+          <img
+            src={course.imageUrl}
+            alt={course.title}
+            onError={() => setImageError(true)}
+            className="w-full h-48 object-cover rounded-lg"
+          />
+        ) : (
+          <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
+            <BookOpen className="h-12 w-12 text-muted-foreground" />
+          </div>
+        )}
+      </CardHeader>
+    </Card>
+  );
+}
+```
+
+## Accessibility
+
+### ARIA Labels
+Always provide appropriate ARIA labels:
+```typescript
+<Button
+  aria-label="Delete course"
+  variant="ghost"
+  size="sm"
+  onClick={() => deleteCourse(course.id)}
+>
+  <Trash2 className="h-4 w-4" />
+</Button>
+```
+
+### Keyboard Navigation
+Ensure components are keyboard accessible:
+```typescript
+<div
+  role="button"
+  tabIndex={0}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      handleClick();
+    }
+  }}
+  onClick={handleClick}
+>
+  Interactive Element
+</div>
+```
+
+## Performance Optimization
+
+### React.memo
+Use React.memo for expensive components:
+```typescript
+export const CourseCard = React.memo(({ course }: { course: Course }) => {
+  // Component implementation
+});
+```
+
+### Code Splitting
+Use dynamic imports for large components:
+```typescript
+import dynamic from "next/dynamic";
+
+ const HeavyComponent = dynamic(() => import("./HeavyComponent"), {
+   loading: () => <Skeleton className="h-48 w-full" />,
+ });
+ ```
