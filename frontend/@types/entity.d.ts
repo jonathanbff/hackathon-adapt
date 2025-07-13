@@ -40,7 +40,15 @@ type GenerateCourseFormSchema = {
     pacing: string;
   };
   userProfileContext: {
-    learningArea: "technology" | "business" | "science" | "arts" | "languages" | "health" | "education" | "others";
+    learningArea:
+      | "technology"
+      | "business"
+      | "science"
+      | "arts"
+      | "languages"
+      | "health"
+      | "education"
+      | "others";
     learningStyle: "visual" | "auditory" | "kinesthetic" | "reading";
     currentLevel: "beginner" | "intermediate" | "advanced";
     multipleIntelligences: string[];
@@ -48,4 +56,13 @@ type GenerateCourseFormSchema = {
     preferredSchedule: string;
   };
   sources: File[];
+};
+
+type Leasson = {
+  id: string;
+  title: string;
+  description: string;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
 };

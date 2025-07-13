@@ -1,11 +1,12 @@
 import { LearningSpace } from "./learning-space";
 
 interface CoursePageProps {
-  params: {
+  params: Promise<{
     courseId: string;
-  };
+  }>;
 }
 
-export default function LearningPage({ params }: CoursePageProps) {
-  return <LearningSpace courseId={params.courseId} />;
+export default async function LearningPage({ params }: CoursePageProps) {
+  const { courseId } = await params;
+  return <LearningSpace courseId={courseId} />;
 }
