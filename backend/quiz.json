@@ -1,0 +1,70 @@
+{
+  "questions": [
+    {
+      "question": "O que é uma rede neural?",
+      "question_type": "multiple-choice",
+      "options": [
+        "Um tipo de conexão de internet",
+        "Um tipo de hardware",
+        "Um modelo de aprendizado de máquina",
+        "Nenhuma das opções"
+      ],
+      "correct_answer": "Um modelo de aprendizado de máquina"
+    },
+    {
+      "question": "Quais são tipos de Redes Neurais?",
+      "question_type": "multiple-choice",
+      "options": [
+        "Convolucionais e Recorrentes",
+        "Lineares e Exponenciais",
+        "Positivas e Negativas",
+        "Altas e Baixas"
+      ],
+      "correct_answer": "Convolucionais e Recorrentes"
+    },
+    {
+      "question": "O que são neurônios e perceptrons na rede neural?",
+      "question_type": "multiple-choice",
+      "options": [
+        "Partes da rede responsáveis pela alimentação de dados",
+        "Partes da rede responsáveis pelo armazenamento de dados",
+        "Elementos básicos da rede responsáveis pelo processamento de informação",
+        "Nenhuma das opções"
+      ],
+      "correct_answer": "Elementos básicos da rede responsáveis pelo processamento de informação"
+    },
+    {
+      "question": "O que é uma Rede Neural Convolucional?",
+      "question_type": "multiple-choice",
+      "options": [
+        "Um tipo de Rede Neural especializada em processar dados com estrutura de grade",
+        "Um tipo de Rede Neural que não precisa de aprendizado supervisionado",
+        "Um tipo de Rede Neural que não pode ser utilizada para reconhecimento de imagens",
+        "Nenhuma das opções"
+      ],
+      "correct_answer": "Um tipo de Rede Neural especializada em processar dados com estrutura de grade"
+    },
+    {
+      "question": "O que é uma Rede Neural Recorrente?",
+      "question_type": "multiple-choice",
+      "options": [
+        "Um tipo de Rede Neural que não processa dados sequenciais",
+        "Um tipo de Rede Neural cujas conexões entre os neurônios formam um ciclo",
+        "Um tipo de Rede Neural que não tem capacidade de lembrar informações passadas",
+        "Nenhuma das opções"
+      ],
+      "correct_answer": "Um tipo de Rede Neural cujas conexões entre os neurônios formam um ciclo"
+    },
+    {
+      "question": "No contexto do Deep Learning, o que é Fine-Tuning?",
+      "question_type": "multiple-choice",
+      "options": [
+        "O processo de ajuste minucioso de um modelo pré-treinado para uma tarefa específica",
+        "O processo de treinamento de um modelo do zero",
+        "O processo de selecionar o melhor modelo com base em seu desempenho em um conjunto de validação",
+        "Nenhuma das opções"
+      ],
+      "correct_answer": "O processo de ajuste minucioso de um modelo pré-treinado para uma tarefa específica"
+    }
+  ]
+}

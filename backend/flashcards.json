@@ -1,0 +1,84 @@
+{
+  "flashcards": [
+    {
+      "question": "O que é uma Rede Neural?",
+      "answer": "Conteúdo cobrido em Módulo 1: Introdução às Redes Neurais, Aula 1: O que é uma Rede Neural?"
+    },
+    {
+      "question": "Quais são os principais marcos na história e evolução das Redes Neurais?",
+      "answer": "Conteúdo cobrido em Módulo 1: Introdução às Redes Neurais, Aula 2: História e Evolução das Redes Neurais"
+    },
+    {
+      "question": "Quais são algumas aplicações práticas de Redes Neurais?",
+      "answer": "Conteúdo cobrido em Módulo 1: Introdução às Redes Neurais, Aula 3: Aplicações práticas de Redes Neurais"
+    },
+    {
+      "question": "Quais são os diferentes tipos de Redes Neurais?",
+      "answer": "Conteúdo cobrido em Módulo 1: Introdução às Redes Neurais, Aula 4: Tipos de Redes Neurais"
+    },
+    {
+      "question": "O que são neurônios e perceptrons em redes neurais?",
+      "answer": "Conteúdo cobrido em Módulo 2: Fundamentos de Redes Neurais, Aula 1: Neurônios e Perceptrons"
+    },
+    {
+      "question": "O que são as funções de ativação em redes neurais?",
+      "answer": "Conteúdo cobrido em Módulo 2: Fundamentos de Redes Neurais, Aula 2: Funções de Ativação"
+    },
+    {
+      "question": "O que são Redes Neurais Feedforward?",
+      "answer": "Conteúdo cobrido em Módulo 2: Fundamentos de Redes Neurais, Aula 3: Redes Neurais Feedforward"
+    },
+    {
+      "question": "O que é Backpropagation?",
+      "answer": "Conteúdo cobrido em Módulo 2: Fundamentos de Redes Neurais, Aula 4: Backpropagation"
+    },
+    {
+      "question": "O que são Redes Neurais Convolucionais?",
+      "answer": "Conteúdo cobrido em Módulo 3: Redes Neurais Convolucionais, Aula 1: Introdução às Redes Neurais Convolucionais"
+    },
+    {
+      "question": "O que são operações de convolution e pooling em redes neurais convolucionais?",
+      "answer": "Conteúdo cobrido em Módulo 3: Redes Neurais Convolucionais, Aula 2: Convolution e Pooling"
+    },
+    {
+      "question": "O que são dropout e normalização em redes neurais?",
+      "answer": "Conteúdo cobrido em Módulo 3: Redes Neurais Convolucionais, Aula 3: Dropout e Normalização"
+    },
+    {
+      "question": "Como implementar uma Rede Neural Convolucional?",
+      "answer": "Conteúdo cobrido em Módulo 3: Redes Neurais Convolucionais, Aula 4: Implementação de uma Rede Neural Convolucional"
+    },
+    {
+      "question": "O que são Redes Neurais Recorrentes?",
+      "answer": "Conteúdo cobrido em Módulo 4: Redes Neurais Recorrentes, Aula 1: Introdução às Redes Neurais Recorrentes"
+    },
+    {
+      "question": "O que é Long Short-Term Memory (LSTM)?",
+      "answer": "Conteúdo cobrido em Módulo 4: Redes Neurais Recorrentes, Aula 2: Long Short-Term Memory (LSTM)"
+    },
+    {
+      "question": "O que é Gated Recurrent Unit (GRU)?",
+      "answer": "Conteúdo cobrido em Módulo 4: Redes Neurais Recorrentes, Aula 3: Gated Recurrent Unit (GRU)"
+    },
+    {
+      "question": "Como implementar uma Rede Neural Recorrente?",
+      "answer": "Conteúdo cobrido em Módulo 4: Redes Neurais Recorrentes, Aula 4: Implementação de uma Rede Neural Recorrente"
+    },
+    {
+      "question": "Quais são as ferramentas e bibliotecas mais usadas para Deep Learning?",
+      "answer": "Conteúdo cobrido em Módulo 5: Deep Learning Prático, Aula 1: Ferramentas e Bibliotecas"
+    },
+    {
+      "question": "Como funciona o treinamento e avaliação de modelos de redes neurais?",
+      "answer": "Conteúdo cobrido em Módulo 5: Deep Learning Prático, Aula 2: Treinamento e Avaliação de Modelos"
+    },
+    {
+      "question": "O que são Fine-Tuning e Transfer Learning em Deep Learning?",
+      "answer": "Conteúdo cobrido em Módulo 5: Deep Learning Prático, Aula 3: Fine-Tuning e Transfer Learning"
+    },
+    {
+      "question": "O que será feito no projeto prático final do curso?",
+      "answer": "Conteúdo cobrido em Módulo 5: Deep Learning Prático, Aula 4: Projeto Prático Final"
+    }
+  ]
+}
