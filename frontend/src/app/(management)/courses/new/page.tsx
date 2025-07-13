@@ -78,16 +78,17 @@ export default function NewCoursePage() {
 
   const router = useRouter();
   const { user } = useUser();
-  
+
   // tRPC mutations
   const generateCourseMutation = api.courseGeneration.generate.useMutation();
-  const { data: runStatus, isLoading: isLoadingStatus } = api.courseGeneration.getStatus.useQuery(
-    { runId: runId! },
-    { 
-      enabled: !!runId,
-      refetchInterval: isGenerating ? 2000 : false, // Poll every 2 seconds when generating
-    }
-  );
+  const { data: runStatus, isLoading: isLoadingStatus } =
+    api.courseGeneration.getStatus.useQuery(
+      { runId: runId! },
+      {
+        enabled: !!runId,
+        refetchInterval: isGenerating ? 2000 : false, // Poll every 2 seconds when generating
+      },
+    );
 
   const getState = (index: number) => {
     if (activeStep > index) return "completed";
@@ -150,10 +151,26 @@ export default function NewCoursePage() {
       const generationRequest: FormValues = {
         title: formValues.title,
         description: formValues.description,
-        goals: formValues.goals as ("career" | "skill" | "hobby" | "certification" | "business" | "teaching")[],
+        goals: formValues.goals as (
+          | "career"
+          | "skill"
+          | "hobby"
+          | "certification"
+          | "business"
+          | "teaching"
+        )[],
         duration: formValues.duration,
         difficulty: formValues.difficulty,
-        format: formValues.format as ("video" | "audio" | "text" | "interactive" | "practical" | "visual" | "presentation" | "quiz")[],
+        format: formValues.format as (
+          | "video"
+          | "audio"
+          | "text"
+          | "interactive"
+          | "practical"
+          | "visual"
+          | "presentation"
+          | "quiz"
+        )[],
         structure: formValues.structure,
         materials: formValues.materials,
         aiPreferences: formValues.aiPreferences,
@@ -166,11 +183,11 @@ export default function NewCoursePage() {
       });
 
       setRunId(result.runId);
-      
+
       // Simulate agent progress while we wait for real updates
       const agentSequence = [
         "content-creator",
-        "structure-architect", 
+        "structure-architect",
         "personalization-expert",
         "assessment-designer",
       ];
@@ -180,7 +197,6 @@ export default function NewCoursePage() {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         setGenerationProgress((i + 1) * 25);
       }
-
     } catch (error) {
       console.error("Failed to start course generation:", error);
       setIsGenerating(false);
@@ -196,12 +212,12 @@ export default function NewCoursePage() {
       setIsGenerating(false);
       setGenerationProgress(100);
       setActiveAgents([]);
-      
+
       // Navigate to the generated course
       if (runStatus.output?.courseId) {
-        router.push(`/dashboard/courses/${runStatus.output.courseId}`);
+        router.push(`/courses/courses/${runStatus.output.courseId}`);
       } else {
-        router.push("/dashboard");
+        router.push("/courses");
       }
     } else if (runStatus?.isFailed) {
       setIsGenerating(false);
