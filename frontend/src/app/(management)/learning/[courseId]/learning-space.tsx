@@ -20,6 +20,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { AudioPlayer } from "~/components/ui/audio-player";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { AITeacherChat } from "~/components/ai-teacher-chat/ai-teacher-chat";
 
 export function LearningSpace({ courseId }: { courseId: string }) {
   const router = useRouter();
