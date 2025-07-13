@@ -2,8 +2,8 @@ import { logger, schemaTask } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import { generateObject } from "ai";
 import { groq } from "@ai-sdk/groq";
-import { db } from "~/server/db/connection";
-import { courses, modules, lessons } from "~/server/db/schemas";
+import { db } from "../../db/connection";
+import { courses, modules, lessons } from "../../db/schemas";
 
 const courseStructureSchema = z.object({
   title: z.string(),

@@ -1,8 +1,8 @@
 import { logger, schemaTask } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import { put } from "@vercel/blob";
-import { db } from "~/server/db/connection";
-import { assets } from "~/server/db/schemas/assets";
+import { db } from "../../db/connection";
+import { assets } from "../../db/schemas/assets";
 
 export const storeDocumentBlobTask = schemaTask({
   id: "ingestion.store-document-blob",

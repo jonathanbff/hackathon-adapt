@@ -1,11 +1,11 @@
 import { logger, schemaTask, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { db } from "~/server/db/connection";
-import { contentItems, articles, quizzes, quizQuestions, examples, lessons as lessonsTable, modules, youtubeVideos } from "~/server/db/schemas";
+import { db } from "../../db/connection";
+import { contentItems, articles, quizzes, quizQuestions, examples, lessons as lessonsTable, modules, youtubeVideos } from "../../db/schemas";
 import { generateObject } from "ai";
 import { groq } from "@ai-sdk/groq";
 import { eq } from "drizzle-orm";
-import { env } from "~/env";
+import { env } from "../../../env";
 
 const lessonContentSchema = z.object({
   summary: z.string().describe("Comprehensive lesson summary"),

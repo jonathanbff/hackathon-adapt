@@ -2,8 +2,8 @@ import { logger, schemaTask } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
-import { db } from "~/server/db/connection";
-import { content } from "~/server/db/schemas/content";
+import { db } from "../../db/connection";
+import { content } from "../../db/schemas/content";
 
 const boundingBoxSchema = z.object({
   x: z.number(),
