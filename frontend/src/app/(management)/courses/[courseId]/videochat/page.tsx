@@ -10,8 +10,8 @@ import { TavusAPI } from "~/components/video-agent/tavus";
 import type { ConversationResponse, ConversationRequest } from "~/types/tavus";
 
 export const VideoChat = () => {
-  const params = useParams<{ course: string }>();
-  const { course } = params;
+  const params = useParams<{ courseId: string }>();
+  const { courseId: course } = params;
   const { id: userId } = useUser();
 
   const [conversation, setConversation] = useState<ConversationResponse | null>(

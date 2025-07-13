@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, lte, desc, asc } from "drizzle-orm";
+import { eq, and, lte, desc, asc, lt } from "drizzle-orm";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
   flashcards,
@@ -8,6 +8,7 @@ import {
   contentItems,
   lessons,
   modules,
+  courses,
 } from "~/server/db/schemas";
 import {
   calculateNextReview,
@@ -100,6 +101,74 @@ export const flashcardsRouter = createTRPCRouter({
         )
         .where(eq(lessons.moduleId, input.moduleId))
         .orderBy(
+          lessons.orderIndex,
+          contentItems.orderIndex,
+          flashcards.createdAt,
+        );
+
+      return cards;
+    }),
+
+  // Get flashcards for a course (all modules within the course)
+  getFlashcardsForCourse: publicProcedure
+    .input(
+      z.object({
+        courseId: z.string(),
+        userId: z.string(),
+        done: z.boolean().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const cards = await ctx.db
+        .select({
+          id: flashcards.id,
+          contentItemId: flashcards.contentItemId,
+          frontContent: flashcards.frontContent,
+          backContent: flashcards.backContent,
+          createdAt: flashcards.createdAt,
+          contentItem: {
+            id: contentItems.id,
+            title: contentItems.title,
+            lessonId: contentItems.lessonId,
+          },
+          lesson: {
+            id: lessons.id,
+            title: lessons.title,
+            moduleId: lessons.moduleId,
+          },
+          module: {
+            id: modules.id,
+            title: modules.title,
+          },
+          progress: {
+            id: userProgress.id,
+            status: userProgress.status,
+            attempts: userProgress.attempts,
+            score: userProgress.score,
+            nextReviewAt: userProgress.nextReviewAt,
+            spacedRepetitionInterval: userProgress.spacedRepetitionInterval,
+          },
+        })
+        .from(flashcards)
+        .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .leftJoin(
+          userProgress,
+          and(
+            eq(userProgress.contentItemId, flashcards.contentItemId),
+            eq(userProgress.userId, input.userId),
+          ),
+        )
+        .where(
+          and(
+            eq(modules.courseId, input.courseId),
+            // lt(userProgress.attempts, 1),
+          ),
+        )
+
+        .orderBy(
+          modules.orderIndex,
           lessons.orderIndex,
           contentItems.orderIndex,
           flashcards.createdAt,
