@@ -2,7 +2,6 @@
 
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { VideoPlayer } from "~/components/vide-player";
 import { api } from "~/trpc/react";
 import {
   Collapsible,
@@ -34,9 +33,6 @@ export function Lesson({
     (content) =>
       content.contentType === "text/markdown" || content.contentType === "text"
   );
-  const videoContents = lessonData.filter(
-    (content) => content.contentType === "video"
-  );
   const quizContents = lessonData.filter(
     (content) => content.contentType === "quiz"
   );
@@ -44,18 +40,12 @@ export function Lesson({
     (content) => content.contentType === "flashcards"
   );
 
-  console.log("quizzes", quizContents);
-
   return (
-    <div className="h-full w-full aspect-video rounded-xl bg-background border border-border border-b-0">
+    <div className="h-full w-full rounded-xl bg-background border border-border border-b-0">
       <Tabs defaultValue="text" className="w-full">
         <TabsList className="grid w-full grid-cols-5 bg-muted/30">
           {!!textContents.length && (
             <TabsTrigger value="text">Conteúdo</TabsTrigger>
-          )}
-
-          {!!videoContents.length && (
-            <TabsTrigger value="video">Vídeo</TabsTrigger>
           )}
 
           {!!quizContents.length && (
@@ -66,18 +56,6 @@ export function Lesson({
             <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
           )}
         </TabsList>
-
-        <TabsContent value="video" className="mt-0">
-          {!!videoContents.length && (
-            <div className="space-y-4">
-              <VideoPlayer
-                videoUrl={videoContents[0]?.content || ""}
-                title={videoContents[0]?.title || "Vídeo da Lição"}
-                thumbnail="/placeholder.svg"
-              />
-            </div>
-          )}
-        </TabsContent>
 
         <TabsContent value="text" className="mt-0 p-5 space-y-3">
           {textContents.map((content) => (

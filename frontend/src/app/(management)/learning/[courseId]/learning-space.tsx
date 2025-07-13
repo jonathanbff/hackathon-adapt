@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { RiBookOpenLine, RiGitRepositoryLine } from "@remixicon/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Lesson } from "./lesson";
+import { ScrollArea } from "~/components/ui/scroll-area";
 
 export function LearningSpace({ courseId }: { courseId: string }) {
   const router = useRouter();
@@ -100,7 +100,7 @@ export function LearningSpace({ courseId }: { courseId: string }) {
             </div>
           </div>
 
-          <ScrollArea>
+          <ScrollArea className="h-[calc(100vh_-_200px)] overflow-hidden">
             <ul className="divide-y divide-border">
               {courseAndRelations?.modules.map((module) => (
                 <li
@@ -147,11 +147,11 @@ export function LearningSpace({ courseId }: { courseId: string }) {
           </ScrollArea>
         </div>
 
-        <div className="h-full aspect-video rounded-xl">
+        <div className="h-full rounded-xl">
           {selectedLesson ? (
             <Lesson lessonId={selectedLesson} courseId={courseId} />
           ) : (
-            <Skeleton className="h-full w-full aspect-video rounded-xl" />
+            <Skeleton className="h-full w-full rounded-xl" />
           )}
         </div>
       </section>
