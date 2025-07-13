@@ -1,4 +1,4 @@
-# Hackathon Adapt
+# Hackathon Adapta
 
 Hackathon Adapt is an experimental platform for generating and delivering course content with the help of AI. It contains:
 
