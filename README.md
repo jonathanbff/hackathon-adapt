@@ -1,9 +1,21 @@
-# Hackathon Adapt
+# Hackathon Adapta
 
 Hackathon Adapt is an experimental platform for generating and delivering course content with the help of AI. It contains:
 
 - **Backend** – Python agents that create course outlines, flashcards, quizzes and podcasts.
 - **Frontend** – a T3 stack web application for interactive learning with chat and document ingestion.
+
+## Architecture
+
+The application is composed of a modern frontend (Next.js, shadcn/ui, Tailwind CSS) and a backend with Python agents and a tRPC API. The backend handles business logic, interacts with the database, and calls external AI/search APIs. The frontend communicates with the backend via type-safe HTTP requests using tRPC.
+
+![Application Architecture](architecture.jpg)
+
+## Flow
+
+The diagram below illustrates the flow of data and requests in the application. The user interacts with the Next.js frontend, which manages state and API calls. These requests are sent to the backend via tRPC, which can invoke background jobs, interact with the database, and call external APIs for AI and search. Data is stored in PostgreSQL and vector databases, with caching and queuing handled by Upstash.
+
+![Application Flow](flow.jpg)
 
 ## Requirements
 
