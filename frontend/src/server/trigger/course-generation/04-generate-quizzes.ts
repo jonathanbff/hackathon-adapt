@@ -2,8 +2,8 @@ import { logger, schemaTask, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import { generateObject } from "ai";
 import { groq } from "@ai-sdk/groq";
-import { db } from "~/server/db/connection";
-import { contentItems, quizzes, quizQuestions } from "~/server/db/schemas";
+import { db } from "../../db/connection";
+import { contentItems, quizzes, quizQuestions } from "../../db/schemas";
 
 const quizSchema = z.object({
   title: z.string(),

@@ -7,4 +7,5 @@ export { generateExamplesTask, generateExamplesBatchTask } from "./05-generate-e
 export { finalizeCourseTask } from "./06-finalize-course";
 export { generateLessonBatchTask } from "./generate-lesson-batch";
 export { generateMoreLessonsTask } from "./generate-more-lessons";
+export { generateEntireCourseTask } from "./generate-entire-course";
 export { mainCourseGenerationTask } from "./main-course-generation-task"; 

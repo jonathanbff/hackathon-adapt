@@ -2,9 +2,9 @@ import { logger, schemaTask, batch, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import { generateObject, generateText } from "ai";
 import { groq } from "@ai-sdk/groq";
-import { db } from "~/server/db/connection";
-import { contentItems, articles } from "~/server/db/schemas";
-import { vectorSearchTool } from "~/server/tools/vector-search";
+import { db } from "../../db/connection";
+import { contentItems, articles } from "../../db/schemas";
+import { vectorSearchTool } from "../../tools/vector-search";
 
 const lessonContentSchema = z.object({
   title: z.string(),

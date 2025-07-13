@@ -1,6 +1,6 @@
 import { logger, schemaTask } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { courseGenerationInputSchema } from "~/server/db/schemas";
+import { courseGenerationInputSchema } from "../../db/schemas";
 
 export const validateGenerationRequestTask = schemaTask({
   id: "course-generation.validate-request",
