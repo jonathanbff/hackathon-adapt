@@ -20,14 +20,16 @@ export const VideoChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
-  const { data: courseStructure } = api.courses.getCourseWithProgress.useQuery({
-    userId,
-    courseId: course,
-  });
+  const { data: courseStructure, isLoading: isLoadingCourseStructure } =
+    api.courses.getCourseWithProgress.useQuery({
+      userId,
+      courseId: course,
+    });
 
-  const { data: courseInfo } = api.courseGeneration.getCourse.useQuery({
-    courseId: course,
-  });
+  const { data: courseInfo, isLoading } =
+    api.courseGeneration.getCourse.useQuery({
+      courseId: course,
+    });
 
   const apiKey = process.env.NEXT_PUBLIC_TAVUS_API_KEY;
 
@@ -38,7 +40,7 @@ export const VideoChat = () => {
     }
 
     // Create fallback conversation if course data is not available
-    const useFallback = !courseStructure || !courseInfo;
+    const useFallback = !courseStructure && !courseInfo;
 
     setLoading(true);
     setError("");
@@ -203,8 +205,9 @@ How can I help you today?`,
         ) || [];
       for await (const promise of promises) {
         await promise;
+        await sleep(100);
       }
-
+      console.log(request);
       const newConversation = await tavusAPI.createConversation(request);
       setConversation(newConversation);
     } catch (err) {
@@ -222,7 +225,13 @@ How can I help you today?`,
   };
 
   useEffect(() => {
-    if (apiKey && !conversation && !loading) {
+    if (
+      apiKey &&
+      !conversation &&
+      !loading &&
+      !isLoading &&
+      !isLoadingCourseStructure
+    ) {
       createConversation();
     }
   }, [courseStructure, courseInfo, apiKey]);
