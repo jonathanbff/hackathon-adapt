@@ -2,11 +2,15 @@ import { FeaturesSection } from "~/components/site/featuress-section";
 import { Hero } from "~/components/site/hero-section";
 import { ElegantShape } from "~/components/ui/elegant-shape";
 import { TestimonialsSection } from "~/components/ui/testimonials-with-marquee";
+import { AuthGuard } from "~/components/auth";
 
 export default function Home() {
   return (
     <>
       <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-background">
+        <div className="absolute top-4 right-4 z-50">
+          <AuthGuard />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-accent/[0.05] blur-3xl" />
 
         <div className="absolute inset-0 overflow-hidden">
