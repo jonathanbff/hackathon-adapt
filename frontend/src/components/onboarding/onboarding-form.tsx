@@ -62,7 +62,7 @@ export function OnboardingForm() {
     // In a real app, you would send this data to your API
     // For now, we'll redirect to a success page or dashboard
     alert("Onboarding concluído! Dados salvos no console.");
-    router.push("/dashboard"); // or wherever you want to redirect
+    router.push("/courses"); // or wherever you want to redirect
   };
 
   const selectOption = (field: keyof UserProfile, value: string) => {

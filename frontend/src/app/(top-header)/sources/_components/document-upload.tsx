@@ -74,6 +74,10 @@ export function DocumentUpload({ onUploadSuccess }: DocumentUploadProps) {
         documentId: result.documentId,
       });
 
+      // Immediately call success callback to refresh the sources list
+      onUploadSuccess?.();
+
+      // Reset form after a short delay to show the success message
       setTimeout(() => {
         setUploadStatus({
           status: "completed",
@@ -83,8 +87,7 @@ export function DocumentUpload({ onUploadSuccess }: DocumentUploadProps) {
         if (fileRef.current) {
           fileRef.current.value = "";
         }
-        onUploadSuccess?.();
-      }, 2000);
+      }, 1000);
     } catch (error) {
       setUploadStatus({
         status: "error",

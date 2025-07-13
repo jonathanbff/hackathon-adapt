@@ -16,7 +16,99 @@ import {
   getInitialReviewSchedule,
 } from "~/server/services/spaced-repetition";
 
+// Helper function to get course progress data
+async function getCourseProgressData(
+  ctx: { db: typeof import("~/server/db").db },
+  input: { courseId: string; userId: string }
+) {
+  // Get total content items in course
+  const totalContentItems = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(contentItems)
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(eq(modules.courseId, input.courseId));
+
+  // Get completed content items
+  const completedItems = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(userProgress)
+    .innerJoin(contentItems, eq(userProgress.contentItemId, contentItems.id))
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(
+      and(
+        eq(modules.courseId, input.courseId),
+        eq(userProgress.userId, input.userId),
+        eq(userProgress.status, "completed")
+      )
+    );
+
+  // Get due flashcards for this course
+  const dueFlashcards = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(userProgress)
+    .innerJoin(
+      flashcards,
+      eq(userProgress.contentItemId, flashcards.contentItemId)
+    )
+    .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(
+      and(
+        eq(modules.courseId, input.courseId),
+        eq(userProgress.userId, input.userId),
+        sql`${userProgress.nextReviewAt} <= NOW()`,
+        eq(userProgress.status, "completed")
+      )
+    );
+
+  const total = Number(totalContentItems[0]?.count) || 0;
+  const completed = Number(completedItems[0]?.count) || 0;
+  const due = Number(dueFlashcards[0]?.count) || 0;
+
+  return {
+    totalContentItems: total,
+    completedContentItems: completed,
+    progressPercentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+    dueFlashcards: due,
+  };
+}
+
 export const coursesRouter = createTRPCRouter({
+  // Get all courses for catalog
+  getAllCourses: publicProcedure.query(async ({ ctx }) => {
+    const coursesData = await ctx.db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        description: courses.description,
+        status: courses.status,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+      })
+      .from(courses)
+      .where(eq(courses.status, "published"))
+      .orderBy(desc(courses.createdAt));
+
+    // Transform database courses to match the expected Course type
+    return coursesData.map((course) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description || "",
+      instructor: "EDUONE IA",
+      rating: 0,
+      students: 0,
+      duration: "4-8 semanas",
+      level: "Intermediário",
+      category: "Tecnologia",
+      tags: ["IA", "Educação"],
+      startedAt: undefined,
+      progress: undefined,
+    }));
+  }),
+
   // Get all courses for a user
   getUserCourses: publicProcedure
     .input(z.object({ userId: z.string() }))
@@ -49,7 +141,7 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         courseId: z.string(),
         userId: z.string(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       // Get course basic info
@@ -100,14 +192,14 @@ export const coursesRouter = createTRPCRouter({
           userProgress,
           and(
             eq(userProgress.contentItemId, contentItems.id),
-            eq(userProgress.userId, input.userId),
-          ),
+            eq(userProgress.userId, input.userId)
+          )
         )
         .where(eq(modules.courseId, input.courseId))
         .orderBy(
           modules.orderIndex,
           lessons.orderIndex,
-          contentItems.orderIndex,
+          contentItems.orderIndex
         );
 
       // Structure the data hierarchically
@@ -141,7 +233,7 @@ export const coursesRouter = createTRPCRouter({
         (module) => ({
           ...module,
           lessons: Array.from(module.lessons.values()),
-        }),
+        })
       );
 
       return {
@@ -158,7 +250,7 @@ export const coursesRouter = createTRPCRouter({
         contentItemId: z.string(),
         score: z.number().optional(),
         timeSpent: z.number().optional(), // in seconds
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       // Update or create progress record
@@ -168,8 +260,8 @@ export const coursesRouter = createTRPCRouter({
         .where(
           and(
             eq(userProgress.userId, input.userId),
-            eq(userProgress.contentItemId, input.contentItemId),
-          ),
+            eq(userProgress.contentItemId, input.contentItemId)
+          )
         )
         .limit(1);
 
@@ -177,18 +269,19 @@ export const coursesRouter = createTRPCRouter({
       const { nextReviewAt, nextInterval } = getInitialReviewSchedule();
 
       if (existingProgress.length > 0) {
+        const currentProgress = existingProgress[0]!;
         await ctx.db
           .update(userProgress)
           .set({
             status: "completed",
-            score: input.score || existingProgress[0].score,
-            attempts: (existingProgress[0].attempts || 0) + 1,
+            score: input.score || existingProgress[0]?.score || 1.0,
+            attempts: (existingProgress[0]?.attempts || 0) + 1,
             lastAttemptAt: now,
             nextReviewAt,
             spacedRepetitionInterval: nextInterval,
             updatedAt: now,
           })
-          .where(eq(userProgress.id, existingProgress[0].id));
+          .where(eq(userProgress.id, existingProgress[0]!.id));
       } else {
         await ctx.db.insert(userProgress).values({
           userId: input.userId,
@@ -233,7 +326,7 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         userId: z.string(),
         moduleId: z.string(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       // Get all content items in the module
@@ -266,12 +359,14 @@ export const coursesRouter = createTRPCRouter({
         .where(
           and(
             eq(userProgress.userId, input.userId),
-            sql`${userProgress.contentItemId} IN (${moduleFlashcards.map((f) => `'${f.contentItemId}'`).join(",")})`,
-          ),
+            sql`${userProgress.contentItemId} IN (${moduleFlashcards
+              .map((f) => `'${f.contentItemId}'`)
+              .join(",")})`
+          )
         );
 
       const existingContentItems = new Set(
-        existingFlashcardProgress.map((p) => p.contentItemId),
+        existingFlashcardProgress.map((p) => p.contentItemId)
       );
 
       // Create initial progress records for new flashcards
@@ -318,7 +413,7 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         courseId: z.string(),
         userId: z.string(),
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       // Get total content items in course
@@ -335,7 +430,7 @@ export const coursesRouter = createTRPCRouter({
         .from(userProgress)
         .innerJoin(
           contentItems,
-          eq(userProgress.contentItemId, contentItems.id),
+          eq(userProgress.contentItemId, contentItems.id)
         )
         .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
         .innerJoin(modules, eq(lessons.moduleId, modules.id))
@@ -343,8 +438,8 @@ export const coursesRouter = createTRPCRouter({
           and(
             eq(modules.courseId, input.courseId),
             eq(userProgress.userId, input.userId),
-            eq(userProgress.status, "completed"),
-          ),
+            eq(userProgress.status, "completed")
+          )
         );
 
       // Get due flashcards for this course
@@ -353,7 +448,7 @@ export const coursesRouter = createTRPCRouter({
         .from(userProgress)
         .innerJoin(
           flashcards,
-          eq(userProgress.contentItemId, flashcards.contentItemId),
+          eq(userProgress.contentItemId, flashcards.contentItemId)
         )
         .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
         .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
@@ -363,8 +458,8 @@ export const coursesRouter = createTRPCRouter({
             eq(modules.courseId, input.courseId),
             eq(userProgress.userId, input.userId),
             sql`${userProgress.nextReviewAt} <= NOW()`,
-            eq(userProgress.status, "completed"),
-          ),
+            eq(userProgress.status, "completed")
+          )
         );
 
       const total = Number(totalContentItems[0]?.count) || 0;
@@ -386,10 +481,45 @@ export const coursesRouter = createTRPCRouter({
       z.object({
         userId: z.string(),
         courseId: z.string(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
-      const progress = await this.getCourseProgress({ ctx, input });
+      // We need to call the procedure directly since 'this' context doesn't work here
+      const progressResult = await ctx.db
+        .select({ count: sql`count(*)` })
+        .from(contentItems)
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(eq(modules.courseId, input.courseId));
+
+      const completedResult = await ctx.db
+        .select({ count: sql`count(*)` })
+        .from(userProgress)
+        .innerJoin(
+          contentItems,
+          eq(userProgress.contentItemId, contentItems.id)
+        )
+        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(
+          and(
+            eq(modules.courseId, input.courseId),
+            eq(userProgress.userId, input.userId),
+            eq(userProgress.status, "completed")
+          )
+        );
+
+      const total = Number(progressResult[0]?.count) || 0;
+      const completed = Number(completedResult[0]?.count) || 0;
+      const progressPercentage =
+        total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      const progress = {
+        totalContentItems: total,
+        completedContentItems: completed,
+        progressPercentage,
+        dueFlashcards: 0, // Simplified for this helper
+      };
 
       // Update user course progress
       await ctx.db
@@ -401,10 +531,127 @@ export const coursesRouter = createTRPCRouter({
         .where(
           and(
             eq(userCourses.userId, input.userId),
-            eq(userCourses.courseId, input.courseId),
-          ),
+            eq(userCourses.courseId, input.courseId)
+          )
         );
 
       return progress;
+    }),
+
+  getCourseById: publicProcedure
+    .input(z.object({ courseId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const course = await ctx.db
+        .select()
+        .from(courses)
+        .where(eq(courses.id, input.courseId))
+        .limit(1);
+
+      if (!course[0]) {
+        throw new Error("Course not found");
+      }
+
+      return course[0];
+    }),
+
+  getUserCourseById: publicProcedure
+    .input(z.object({ courseId: z.string(), userId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const course = await ctx.db
+        .select()
+        .from(courses)
+        .where(eq(courses.id, input.courseId))
+        .limit(1);
+
+      if (!course[0]) {
+        throw new Error("Course not found");
+      }
+
+      return course[0];
+    }),
+
+  // Get course by ID with modules and lessons
+  getCourseWithModulesAndLessons: publicProcedure
+    .input(z.object({ courseId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Get course basic info
+      const course = await ctx.db
+        .select()
+        .from(courses)
+        .where(eq(courses.id, input.courseId))
+        .limit(1);
+
+      if (!course[0]) {
+        throw new Error("Course not found");
+      }
+
+      // Get modules with lessons
+      const moduleData = await ctx.db
+        .select({
+          module: {
+            id: modules.id,
+            title: modules.title,
+            description: modules.description,
+            orderIndex: modules.orderIndex,
+            createdAt: modules.createdAt,
+            updatedAt: modules.updatedAt,
+          },
+          lesson: {
+            id: lessons.id,
+            title: lessons.title,
+            description: lessons.description,
+            orderIndex: lessons.orderIndex,
+            createdAt: lessons.createdAt,
+            updatedAt: lessons.updatedAt,
+          },
+        })
+        .from(modules)
+        .innerJoin(lessons, eq(modules.id, lessons.moduleId))
+        .where(eq(modules.courseId, input.courseId))
+        .orderBy(modules.orderIndex, lessons.orderIndex);
+
+      // Structure the data hierarchically
+      const moduleMap = new Map();
+
+      moduleData.forEach((row) => {
+        if (!moduleMap.has(row.module.id)) {
+          moduleMap.set(row.module.id, {
+            ...row.module,
+            lessons: [],
+          });
+        }
+
+        const module = moduleMap.get(row.module.id);
+        module.lessons.push(row.lesson);
+      });
+
+      // Convert map to array
+      const structuredModules = Array.from(moduleMap.values());
+
+      return {
+        course: course[0],
+        modules: structuredModules,
+      };
+    }),
+
+  // Get content items by lesson ID
+  getContentItemsByLessonId: publicProcedure
+    .input(z.object({ lessonId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const contentItemsData = await ctx.db
+        .select({
+          id: contentItems.id,
+          title: contentItems.title,
+          content: contentItems.content,
+          contentType: contentItems.contentType,
+          orderIndex: contentItems.orderIndex,
+          createdAt: contentItems.createdAt,
+          updatedAt: contentItems.updatedAt,
+        })
+        .from(contentItems)
+        .where(eq(contentItems.lessonId, input.lessonId))
+        .orderBy(contentItems.orderIndex);
+
+      return contentItemsData;
     }),
 });

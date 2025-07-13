@@ -32,7 +32,7 @@ export function Confetti({
         id: i,
         left: Math.random() * 100,
         delay: Math.random() * 0.5,
-        color: colors[Math.floor(Math.random() * colors.length)],
+        color: colors[Math.floor(Math.random() * colors.length)] || "#f59e0b",
       }));
 
       setParticles(newParticles);

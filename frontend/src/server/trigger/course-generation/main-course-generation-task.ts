@@ -1,12 +1,9 @@
-import { schemaTask, tasks } from "@trigger.dev/sdk/v3";
+import { logger, schemaTask, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { metadata } from "@trigger.dev/sdk/v3";
 import { courseGenerationInputSchema } from "~/server/db/schemas";
-import { validateGenerationRequestTask } from "./01-validate-generation-request";
-import { createCourseStructureTask } from "./02-create-course-structure";
-import { generateModuleContentTask } from "./03-generate-module-content";
-import { generateLessonContentTask } from "./04-generate-lesson-content";
-import { generateAssessmentsTask } from "./05-generate-assessments";
+import { validateGenerationRequestTask } from "./00-validate-generation-request";
+import { createCourseStructureTask } from "./01-create-course-structure";
+import { generateLessonBatchTask } from "./generate-lesson-batch";
 import { finalizeCourseTask } from "./06-finalize-course";
 
 export const mainCourseGenerationTask = schemaTask({
@@ -19,146 +16,148 @@ export const mainCourseGenerationTask = schemaTask({
     maxAttempts: 1,
   },
   run: async ({ userId, generationRequest }) => {
-    metadata.set("status", "validating_request");
-    
-    const validation = await tasks.triggerAndWait<typeof validateGenerationRequestTask>(
-      "course-generation.validate-request",
-      {
-        userId,
-        generationRequest,
-      },
-      {
-        tags: [userId, "course-generation"],
-      }
-    );
-    
-    if (!validation.ok) {
-      throw new Error(`Request validation failed: ${validation.error}`);
-    }
+    logger.log("Starting progressive course generation pipeline", {
+      userId,
+      title: generationRequest.title,
+      goals: generationRequest.goals,
+      duration: generationRequest.duration,
+      difficulty: generationRequest.difficulty,
+    });
 
-    metadata.set("status", "creating_structure");
-    
-    const courseStructure = await tasks.triggerAndWait<typeof createCourseStructureTask>(
-      "course-generation.create-structure",
-      {
-        requestId: validation.output.requestId,
-        validatedData: validation.output.validatedData,
-      },
-      {
-        tags: [userId, "course-generation"],
-      }
-    );
-    
-    if (!courseStructure.ok) {
-      throw new Error(`Course structure creation failed: ${courseStructure.error}`);
-    }
+    try {
+      // Step 1: Validate the generation request
+      logger.log("Step 1: Validating generation request");
+      const validationResult = await tasks.triggerAndWait(
+        "course-generation.validate-request",
+        {
+          userId,
+          generationRequest,
+        }
+      );
 
-    metadata.set("status", "generating_module_content");
-    
-    const moduleContent = await tasks.triggerAndWait<typeof generateModuleContentTask>(
-      "course-generation.generate-modules",
-      {
-        requestId: validation.output.requestId,
-        courseId: courseStructure.output.courseId,
-        moduleData: courseStructure.output.moduleData,
-        validatedData: validation.output.validatedData,
-      },
-      {
-        tags: [userId, "course-generation"],
+      if (!validationResult.ok) {
+        throw new Error(`Validation failed: ${validationResult.error}`);
       }
-    );
-    
-    if (!moduleContent.ok) {
-      throw new Error(`Module content generation failed: ${moduleContent.error}`);
-    }
 
-    metadata.set("status", "generating_lesson_content");
-    
-    const lessonContent = await tasks.triggerAndWait<typeof generateLessonContentTask>(
-      "course-generation.generate-lessons",
-      {
-        requestId: validation.output.requestId,
-        courseId: courseStructure.output.courseId,
-        moduleData: courseStructure.output.moduleData,
-        validatedData: validation.output.validatedData,
-      },
-      {
-        tags: [userId, "course-generation"],
+      const courseSettings = validationResult.output.courseSettings;
+      logger.log("Generation request validated successfully", {
+        courseSettings: courseSettings.title,
+      });
+
+      // Step 2: Create course structure
+      logger.log("Step 2: Creating course structure");
+      const structureResult = await tasks.triggerAndWait(
+        "course-generation.create-structure",
+        {
+          userId,
+          courseSettings,
+        }
+      );
+
+      if (!structureResult.ok) {
+        throw new Error(`Course structure creation failed: ${structureResult.error}`);
       }
-    );
-    
-    if (!lessonContent.ok) {
-      throw new Error(`Lesson content generation failed: ${lessonContent.error}`);
-    }
 
-    metadata.set("status", "generating_assessments");
-    
-    const assessments = await tasks.triggerAndWait<typeof generateAssessmentsTask>(
-      "course-generation.generate-assessments",
-      {
-        requestId: validation.output.requestId,
-        courseId: courseStructure.output.courseId,
-        moduleData: courseStructure.output.moduleData,
-        validatedData: validation.output.validatedData,
-      },
-      {
-        tags: [userId, "course-generation"],
+      const courseStructure = structureResult.output.courseStructure;
+      const courseId = structureResult.output.courseId;
+      logger.log("Course structure created successfully", {
+        courseId: courseId,
+        modulesCount: courseStructure.modules.length,
+      });
+
+      // Step 3: Generate first 2 modules with full lesson content (sequentially)
+      logger.log("Step 3: Generating first 2 modules with lessons");
+      const modulesToGenerate = courseStructure.modules.slice(0, 2); // Only first 2 modules
+      
+      const moduleResults = [];
+      
+      for (const module of modulesToGenerate) {
+        logger.log(`Generating lessons for module: ${module.title}`);
+        
+        const lessonBatchResult = await tasks.triggerAndWait(
+          "course-generation.generate-lesson-batch",
+          {
+            userId,
+            courseId: courseId,
+            lessons: module.lessons,
+            moduleContext: {
+              title: module.title,
+              description: module.description,
+            },
+            courseSettings: {
+              title: courseSettings.title,
+              difficulty: courseSettings.difficulty,
+              format: courseSettings.format,
+              userProfileContext: courseSettings.userProfileContext,
+              aiPreferences: courseSettings.aiPreferences,
+            },
+          }
+        );
+
+        if (!lessonBatchResult.ok) {
+          throw new Error(`Lesson generation failed for module ${module.title}: ${lessonBatchResult.error}`);
+        }
+
+        const moduleResult = {
+          moduleId: module.id,
+          moduleTitle: module.title,
+          ...lessonBatchResult.output,
+        };
+        
+        moduleResults.push(moduleResult);
       }
-    );
-    
-    if (!assessments.ok) {
-      throw new Error(`Assessment generation failed: ${assessments.error}`);
-    }
+      
+      logger.log("First 2 modules generated successfully", {
+        modulesGenerated: moduleResults.length,
+        totalLessonsGenerated: moduleResults.reduce((total, module) => total + module.totalLessons, 0),
+      });
 
-    metadata.set("status", "finalizing_course");
-    
-    const finalization = await tasks.triggerAndWait<typeof finalizeCourseTask>(
-      "course-generation.finalize-course",
-      {
-        requestId: validation.output.requestId,
-        courseId: courseStructure.output.courseId,
-        generationResults: {
+      // Step 4: Finalize course (mark as partially generated)
+      logger.log("Step 4: Finalizing course");
+      const finalizeResult = await tasks.triggerAndWait(
+        "course-generation.finalize-course",
+        {
+          userId,
+          courseId: courseId,
           courseStructure: {
-            totalModules: courseStructure.output.totalModules,
-            totalLessons: courseStructure.output.totalLessons,
+            ...courseStructure,
+            modules: courseStructure.modules.map((module: any, index: number) => ({
+              ...module,
+              isGenerated: index < 2, // Mark first 2 modules as generated
+            })),
           },
-          moduleContent: {
-            totalModules: moduleContent.output.totalModules,
-          },
-          lessonContent: {
-            totalLessons: lessonContent.output.totalLessons,
-            totalContentItems: lessonContent.output.totalContentItems,
-          },
-          assessments: {
-            totalAssessments: assessments.output.totalAssessments,
-            totalQuizQuestions: assessments.output.totalQuizQuestions,
-            totalExercises: assessments.output.totalExercises,
-            totalProjects: assessments.output.totalProjects,
-          },
-        },
-      },
-      {
-        tags: [userId, "course-generation"],
-      }
-    );
-    
-    if (!finalization.ok) {
-      throw new Error(`Course finalization failed: ${finalization.error}`);
-    }
+        }
+      );
 
-    metadata.set("status", "completed");
-    
-    return {
-      success: true,
-      courseId: finalization.output.courseId,
-      courseTitle: finalization.output.courseTitle,
-      courseStatus: finalization.output.courseStatus,
-      completedAt: finalization.output.completedAt,
-      requestId: validation.output.requestId,
-      courseStats: finalization.output.courseStats,
-      redirectUrl: finalization.output.redirectUrl,
-      processingSteps: 6,
-      message: "Course generation completed successfully",
-    };
+      if (!finalizeResult.ok) {
+        throw new Error(`Course finalization failed: ${finalizeResult.error}`);
+      }
+
+      logger.log("Progressive course generation completed successfully", {
+        userId,
+        courseId: courseId,
+        totalModules: courseStructure.modules.length,
+        generatedModules: 2,
+        pendingModules: courseStructure.modules.length - 2,
+      });
+
+      return {
+        success: true,
+        courseId: courseId,
+        courseTitle: courseSettings.title,
+        totalModules: courseStructure.modules.length,
+        generatedModules: 2,
+        pendingModules: courseStructure.modules.length - 2,
+        moduleResults,
+        generationStatus: "partially_generated",
+      };
+
+    } catch (error) {
+      logger.error("Course generation failed", {
+        userId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+      throw error;
+    }
   },
 }); 

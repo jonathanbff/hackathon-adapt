@@ -2,12 +2,12 @@ import { pgTable, uuid, varchar, text, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { users } from "./users";
-import { videos } from "./content";
+import { lessonVideos } from "./content";
 
 export const chatConversations = pgTable("chat_conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
-  videoId: uuid("video_id").references(() => videos.id, { onDelete: "cascade" }),
+  videoId: uuid("video_id").references(() => lessonVideos.id, { onDelete: "cascade" }),
   title: varchar("title", { length: 255 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -27,9 +27,9 @@ export const chatConversationsRelations = relations(chatConversations, ({ one, m
     fields: [chatConversations.userId],
     references: [users.id],
   }),
-  video: one(videos, {
+  video: one(lessonVideos, {
     fields: [chatConversations.videoId],
-    references: [videos.id],
+    references: [lessonVideos.id],
   }),
   messages: many(chatMessages),
 }));

@@ -7,6 +7,9 @@ import { parsePdfToMarkdownTask } from "./02-parse-pdf-to-markdown";
 import { storeMarkdownBlobTask } from "./03-store-markdown-blob";
 import { extractMetadataLayoutTask } from "./04-extract-metadata-layout";
 import { splitAndVectorizeTask } from "./05-split-and-vectorize";
+import { db } from "../../db/connection";
+import { documents } from "../../db/schemas/assets";
+import { eq } from "drizzle-orm";
 
 export const mainIngestionTask = schemaTask({
   id: "ingestion.main",
@@ -22,24 +25,25 @@ export const mainIngestionTask = schemaTask({
     maxAttempts: 1,
   },
   run: async ({ document, userId }) => {
-    metadata.set("status", "validating_document");
-    const documentValidation = await tasks.triggerAndWait<typeof validateDocumentTask>(
-      "ingestion.validate-document",
-      {
-        document: {
-          id: document.id,
-          url: document.url,
-          filename: document.filename,
+    try {
+      metadata.set("status", "validating_document");
+      const documentValidation = await tasks.triggerAndWait<typeof validateDocumentTask>(
+        "ingestion.validate-document",
+        {
+          document: {
+            id: document.id,
+            url: document.url,
+            filename: document.filename,
+          },
+          userId,
         },
-        userId,
-      },
-      {
-        tags: [userId, "ingestion"],
+        {
+          tags: [userId, "ingestion"],
+        }
+      );
+      if (!documentValidation.ok) {
+        throw new Error(`Document validation failed: ${documentValidation.error}`);
       }
-    );
-    if (!documentValidation.ok) {
-      throw new Error(`Document validation failed: ${documentValidation.error}`);
-    }
 
     metadata.set("status", "storing_document_blob");
     const documentBlob = await tasks.triggerAndWait<typeof storeDocumentBlobTask>(
@@ -142,6 +146,20 @@ export const mainIngestionTask = schemaTask({
       }
 
       metadata.set("status", "completed");
+      
+      // Update document status in database
+      console.log(`[INGESTION] Updating document ${document.id} status to completed (PDF path)`);
+      const updateResult = await db
+        .update(documents)
+        .set({
+          processingStatus: "completed",
+          updatedAt: new Date(),
+        })
+        .where(eq(documents.id, document.id))
+        .returning({ id: documents.id, processingStatus: documents.processingStatus });
+      
+      console.log(`[INGESTION] Document ${document.id} updated successfully:`, updateResult);
+
       return {
         success: true,
         documentId: document.id,
@@ -199,6 +217,20 @@ export const mainIngestionTask = schemaTask({
       }
 
       metadata.set("status", "completed");
+      
+      // Update document status in database
+      console.log(`[INGESTION] Updating document ${document.id} status to completed (non-PDF path)`);
+      const updateResult = await db
+        .update(documents)
+        .set({
+          processingStatus: "completed",
+          updatedAt: new Date(),
+        })
+        .where(eq(documents.id, document.id))
+        .returning({ id: documents.id, processingStatus: documents.processingStatus });
+      
+      console.log(`[INGESTION] Document ${document.id} updated successfully:`, updateResult);
+
       return {
         success: true,
         documentId: document.id,
@@ -209,6 +241,23 @@ export const mainIngestionTask = schemaTask({
         uploadedVectors: vectorization.output.uploadedVectors,
         processingSteps: 4,
       };
+    }
+    } catch (error) {
+      // Update document status to failed in database
+      console.error(`[INGESTION] Document ${document.id} processing failed:`, error);
+      const updateResult = await db
+        .update(documents)
+        .set({
+          processingStatus: "failed",
+          updatedAt: new Date(),
+        })
+        .where(eq(documents.id, document.id))
+        .returning({ id: documents.id, processingStatus: documents.processingStatus });
+      
+      console.log(`[INGESTION] Document ${document.id} marked as failed:`, updateResult);
+      
+      // Re-throw the error to let the trigger system handle it
+      throw error;
     }
   },
 }); 

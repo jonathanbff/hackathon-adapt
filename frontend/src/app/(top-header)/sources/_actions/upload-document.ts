@@ -67,7 +67,8 @@ export async function uploadDocument(formData: FormData) {
       },
     });
 
-    await tasks.trigger<typeof mainIngestionTask>("ingestion.main", {
+    console.log(`[UPLOAD] Starting ingestion task for document ${documentId}`);
+    const triggerResult = await tasks.trigger<typeof mainIngestionTask>("ingestion.main", {
       document: {
         id: documentId,
         url: blob.url,
@@ -75,6 +76,8 @@ export async function uploadDocument(formData: FormData) {
       },
       userId: userId,
     });
+    
+    console.log(`[UPLOAD] Ingestion task triggered with run ID: ${triggerResult.id}`);
 
     return {
       success: true,

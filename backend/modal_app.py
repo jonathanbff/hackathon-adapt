@@ -1,14 +1,32 @@
 import os
+
+from dataclasses import dataclass
+
 import modal
 from pydantic import BaseModel
 from typing import Dict, Any
-# Create Modal image with all required dependencies and local files
-image = modal.Image.debian_slim(python_version="3.13").pip_install(
+from fastapi.responses import FileResponse
+
+from podcast import PodcastGenerator, ToneType
+# deployed urls:
+# ├── 🔨 Created web function generate_course_content =>
+# │   https://davisuga-chief--edu-one-generate-course-content.modal.run
+# ├── 🔨 Created web function generate_flashcards =>
+# │   https://davisuga-chief--edu-one-generate-flashcards.modal.run
+# ├── 🔨 Created web function generate_quiz => https://davisuga-chief--edu-one-generate-quiz.modal.run
+# ├── 🔨 Created web function generate_course_package =>
+# │   https://davisuga-chief--edu-one-generate-course-package.modal.run
+image = modal.Image.debian_slim(python_version="3.13").apt_install("ffmpeg").pip_install(
     "fastapi[standard]",
     "langgraph",
     "langchain-openai",
     "langflow-base",
-    "pydantic"
+    "pydantic",
+    "fastapi",
+    "dotenv",
+    "openai",
+    "pydantic",
+    "audio-utils"
 ).add_local_dir(".", "/root")
 
 app = modal.App(name="edu_one", image=image)
@@ -39,6 +57,9 @@ class CoursePackageResponse(BaseModel):
     course_content: Dict[str, Any]
     flashcards: Dict[str, Any]
     quiz: Dict[str, Any]
+
+class PodcastRequest(BaseModel):
+    topic: str
 
 @app.function()
 @modal.fastapi_endpoint(docs=True)
@@ -77,6 +98,26 @@ def generate_quiz(request: QuizRequest):
         return {"quiz": quiz}
     except Exception as e:
         return {"error": str(e)}
+
+generator = PodcastGenerator()
+@dataclass
+class PodcastGeneratorReq:
+    content: str
+    title: str
+    target_audience: str = "Alunos "
+    format_style: str = "Conversa educacional entre especialista e mediador"
+
+@app.function()
+@modal.fastapi_endpoint(method="POST", docs=True)
+def generate_podcast(request: PodcastGeneratorReq):
+    p= generator.generate_podcast(
+        content=request.content,
+        title=request.title,
+        target_audience=request.target_audience,
+        format_style=request.format_style,
+        tone=ToneType.EDUCATIONAL,
+    )
+    return FileResponse(path=p)
 
 @app.function()
 @modal.fastapi_endpoint(method="POST", docs=True)

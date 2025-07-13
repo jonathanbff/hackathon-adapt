@@ -78,7 +78,11 @@ export function useChatMessages({
   };
 
   useEffect(() => {
-    scrollToBottom();
+    const timeoutId = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent, onConversationCreate: () => Promise<any>) => {

@@ -1,0 +1,46 @@
+# Podcast Gerado por IA
+# Roteiro completo do podcast
+
+## Segmento 1 - Dr. Carlos Eduardo
+Olá pessoal, bem-vindos ao nosso podcast! Eu sou Dr. Carlos Eduardo, e estamos aqui para explorar os pontos mais importantes do nosso tema de hoje.
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_c62ccfa9_alloy.mp3
+
+## Segmento 2 - Ana Clara
+E eu sou Ana Clara! Que bom estar aqui com vocês, e com você, Dr. Carlos. Nosso tópico hoje é o 'Ponto principal 1'. Pode nos explicar um pouco sobre isso, doutor?
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_7b5ea014_shimmer.mp3
+
+## Segmento 3 - Dr. Carlos Eduardo
+Claro, Ana. O 'Ponto principal 1' é essencial porque... Agora, vamos ao 'Ponto principal 2'. Este é um assunto que precisa ser bem desmistificado...
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_138bab63_alloy.mp3
+
+## Segmento 4 - Ana Clara
+Interessante, doutor! E como o 'Ponto principal 3' se relaciona com os dois primeiros pontos que discutimos?
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_1c632e4c_shimmer.mp3
+
+## Segmento 5 - Dr. Carlos Eduardo
+Ótima pergunta, Ana. O 'Ponto principal 3' se conecta da seguinte forma... E, então, chegamos ao 'Ponto principal 4', que é...
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_a6e730b4_alloy.mp3
+
+## Segmento 6 - Ana Clara
+Incrível, doutor! E para finalizar, o que o 'Ponto principal 5' tem de tão especial?
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_0b8c9171_shimmer.mp3
+
+## Segmento 7 - Dr. Carlos Eduardo
+O 'Ponto principal 5' é fundamental porque... Espero que todos tenham aproveitado nosso bate-papo hoje. Até a próxima!
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_465568b9_alloy.mp3
+
+## Segmento 8 - Ana Clara
+Obrigada, Dr. Carlos Eduardo, e obrigada a todos que nos acompanharam. Não percam nosso próximo podcast, até mais!
+
+Arquivo de áudio: /tmp/tmp858n9ygf/segment_6295329f_shimmer.mp3
+
+---
+Para ouvir o podcast completo, instale as dependências de áudio:
+pip install pydub

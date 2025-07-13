@@ -42,7 +42,7 @@ export function Hero() {
               "Científica",
               "Adaptativa",
             ]}
-            className="bg-gradient-primary bg-clip-text text-transparent"
+            className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent"
             rotationInterval={3000}
           />
         </h1>
