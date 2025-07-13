@@ -49,8 +49,14 @@ def generate_course_content(topic: str) -> dict:
         raise
 
 
-def generate_course_package(topic: str, output_file: str = "course_material.json") -> dict:
-    """Generate course content, flashcards and quiz and save them to a file."""
+def generate_course_package(
+    topic: str,
+    course_file: str = "course_content.json",
+    flashcards_file: str = "flashcards.json",
+    quiz_file: str = "quiz.json",
+) -> dict:
+    """Generate course content, flashcards and quiz and save them to files."""
+
     course_content = generate_course_content(topic)
     flashcards = generate_flashcards(course_content)
     content_json = json.dumps(course_content, ensure_ascii=False, indent=2)
@@ -62,8 +68,14 @@ def generate_course_package(topic: str, output_file: str = "course_material.json
         "quiz": quiz,
     }
 
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(package, f, ensure_ascii=False, indent=2)
+    with open(course_file, "w", encoding="utf-8") as f:
+        json.dump(course_content, f, ensure_ascii=False, indent=2)
+
+    with open(flashcards_file, "w", encoding="utf-8") as f:
+        json.dump(flashcards, f, ensure_ascii=False, indent=2)
+
+    with open(quiz_file, "w", encoding="utf-8") as f:
+        json.dump(quiz, f, ensure_ascii=False, indent=2)
 
     return package
 
