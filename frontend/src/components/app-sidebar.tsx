@@ -10,7 +10,9 @@ import {
   MessageSquare,
   Sparkles,
   BookOpen,
+  LogOut,
 } from "lucide-react"
+import { useClerk, useUser } from "@clerk/nextjs"
 
 import {
   Sidebar,
@@ -31,6 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 
 const items = [
   {
@@ -67,6 +70,16 @@ const items = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar()
+  const { signOut } = useClerk()
+  const { user } = useUser()
+
+  const handleSignOut = async () => {
+    try {
+      await signOut({ redirectUrl: "/" })
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -114,12 +127,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuButton
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                  tooltip="Guest User"
+                  tooltip={user?.fullName || "User"}
                 >
-                  <User2 className="size-4 rounded-full" />
+                  <Avatar className="size-8">
+                    <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Guest User</span>
-                    <span className="truncate text-xs">guest@example.com</span>
+                    <span className="truncate font-semibold">{user?.fullName || "User"}</span>
+                    <span className="truncate text-xs">{user?.primaryEmailAddress?.emailAddress || "No email"}</span>
                   </div>
                   <ChevronUp className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -138,7 +156,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Settings />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut />
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>

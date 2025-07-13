@@ -1,8 +1,14 @@
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Settings, User, Bell, Shield } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { useUser } from "@clerk/nextjs";
 
 export default function SettingsPage() {
+  const { user } = useUser();
+
   return (
     <div className="space-y-6">
       <div>
@@ -11,6 +17,36 @@ export default function SettingsPage() {
           Manage your account and preferences
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Profile Overview
+          </CardTitle>
+          <CardDescription>
+            Your account information and profile settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 mb-6">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={user?.imageUrl} alt={user?.fullName || "User"} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="text-lg font-semibold">{user?.fullName || "User"}</h3>
+              <p className="text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
+              <p className="text-sm text-muted-foreground">Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</p>
+            </div>
+          </div>
+          <Button variant="outline">
+            Update Profile Photo
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
