@@ -209,6 +209,7 @@ export const flashcardsRouter = createTRPCRouter({
 
       // Update or create progress record
       if (existingProgress.length > 0) {
+        const currentProgress = existingProgress[0]!;
         await ctx.db
           .update(userProgress)
           .set({
@@ -220,7 +221,7 @@ export const flashcardsRouter = createTRPCRouter({
             status: "completed",
             updatedAt: new Date(),
           })
-          .where(eq(userProgress.id, existingProgress[0].id));
+          .where(eq(userProgress.id, currentProgress.id));
       } else {
         await ctx.db.insert(userProgress).values({
           userId: input.userId,

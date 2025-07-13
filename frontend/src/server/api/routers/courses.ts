@@ -16,6 +16,70 @@ import {
   getInitialReviewSchedule,
 } from "~/server/services/spaced-repetition";
 
+// Helper function to get course progress data
+async function getCourseProgressData(
+  ctx: { db: typeof import("~/server/db").db },
+  input: { courseId: string; userId: string }
+) {
+  // Get total content items in course
+  const totalContentItems = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(contentItems)
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(eq(modules.courseId, input.courseId));
+
+  // Get completed content items
+  const completedItems = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(userProgress)
+    .innerJoin(
+      contentItems,
+      eq(userProgress.contentItemId, contentItems.id),
+    )
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(
+      and(
+        eq(modules.courseId, input.courseId),
+        eq(userProgress.userId, input.userId),
+        eq(userProgress.status, "completed"),
+      ),
+    );
+
+  // Get due flashcards for this course
+  const dueFlashcards = await ctx.db
+    .select({ count: sql`count(*)` })
+    .from(userProgress)
+    .innerJoin(
+      flashcards,
+      eq(userProgress.contentItemId, flashcards.contentItemId),
+    )
+    .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
+    .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
+    .innerJoin(modules, eq(lessons.moduleId, modules.id))
+    .where(
+      and(
+        eq(modules.courseId, input.courseId),
+        eq(userProgress.userId, input.userId),
+        sql`${userProgress.nextReviewAt} <= NOW()`,
+        eq(userProgress.status, "completed"),
+      ),
+    );
+
+  const total = Number(totalContentItems[0]?.count) || 0;
+  const completed = Number(completedItems[0]?.count) || 0;
+  const due = Number(dueFlashcards[0]?.count) || 0;
+
+  return {
+    totalContentItems: total,
+    completedContentItems: completed,
+    progressPercentage:
+      total > 0 ? Math.round((completed / total) * 100) : 0,
+    dueFlashcards: due,
+  };
+}
+
 export const coursesRouter = createTRPCRouter({
   // Get all courses for a user
   getUserCourses: publicProcedure
@@ -177,18 +241,19 @@ export const coursesRouter = createTRPCRouter({
       const { nextReviewAt, nextInterval } = getInitialReviewSchedule();
 
       if (existingProgress.length > 0) {
+        const currentProgress = existingProgress[0]!;
         await ctx.db
           .update(userProgress)
           .set({
             status: "completed",
-            score: input.score || existingProgress[0].score,
-            attempts: (existingProgress[0].attempts || 0) + 1,
+            score: input.score || currentProgress.score,
+            attempts: (currentProgress.attempts || 0) + 1,
             lastAttemptAt: now,
             nextReviewAt,
             spacedRepetitionInterval: nextInterval,
             updatedAt: now,
           })
-          .where(eq(userProgress.id, existingProgress[0].id));
+          .where(eq(userProgress.id, currentProgress.id));
       } else {
         await ctx.db.insert(userProgress).values({
           userId: input.userId,
@@ -321,63 +386,7 @@ export const coursesRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Get total content items in course
-      const totalContentItems = await ctx.db
-        .select({ count: sql`count(*)` })
-        .from(contentItems)
-        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
-        .innerJoin(modules, eq(lessons.moduleId, modules.id))
-        .where(eq(modules.courseId, input.courseId));
-
-      // Get completed content items
-      const completedItems = await ctx.db
-        .select({ count: sql`count(*)` })
-        .from(userProgress)
-        .innerJoin(
-          contentItems,
-          eq(userProgress.contentItemId, contentItems.id),
-        )
-        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
-        .innerJoin(modules, eq(lessons.moduleId, modules.id))
-        .where(
-          and(
-            eq(modules.courseId, input.courseId),
-            eq(userProgress.userId, input.userId),
-            eq(userProgress.status, "completed"),
-          ),
-        );
-
-      // Get due flashcards for this course
-      const dueFlashcards = await ctx.db
-        .select({ count: sql`count(*)` })
-        .from(userProgress)
-        .innerJoin(
-          flashcards,
-          eq(userProgress.contentItemId, flashcards.contentItemId),
-        )
-        .innerJoin(contentItems, eq(flashcards.contentItemId, contentItems.id))
-        .innerJoin(lessons, eq(contentItems.lessonId, lessons.id))
-        .innerJoin(modules, eq(lessons.moduleId, modules.id))
-        .where(
-          and(
-            eq(modules.courseId, input.courseId),
-            eq(userProgress.userId, input.userId),
-            sql`${userProgress.nextReviewAt} <= NOW()`,
-            eq(userProgress.status, "completed"),
-          ),
-        );
-
-      const total = Number(totalContentItems[0]?.count) || 0;
-      const completed = Number(completedItems[0]?.count) || 0;
-      const due = Number(dueFlashcards[0]?.count) || 0;
-
-      return {
-        totalContentItems: total,
-        completedContentItems: completed,
-        progressPercentage:
-          total > 0 ? Math.round((completed / total) * 100) : 0,
-        dueFlashcards: due,
-      };
+      return await getCourseProgressData(ctx, input);
     }),
 
   // Helper function to update course progress
@@ -389,7 +398,7 @@ export const coursesRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const progress = await this.getCourseProgress({ ctx, input });
+      const progress = await getCourseProgressData(ctx, input);
 
       // Update user course progress
       await ctx.db
