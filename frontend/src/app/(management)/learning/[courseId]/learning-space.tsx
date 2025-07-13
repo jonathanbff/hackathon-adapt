@@ -10,7 +10,6 @@ import {
 } from "@remixicon/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Lesson } from "./lesson";
 import {
   Card,
@@ -20,6 +19,7 @@ import {
 } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { AudioPlayer } from "~/components/ui/audio-player";
+import { ScrollArea } from "~/components/ui/scroll-area";
 
 export function LearningSpace({ courseId }: { courseId: string }) {
   const router = useRouter();

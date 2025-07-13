@@ -20,17 +20,21 @@ import tempfile
 load_dotenv()
 
 class VoiceType(Enum):
-    """Tipos de voz disponíveis - 11 vozes da OpenAI"""
-    ALLOY = "alloy"      # Voz neutra e clara
-    ASH = "ash"          # Nova voz versátil
-    BALLAD = "ballad"    # Nova voz melodiosa
-    CORAL = "coral"      # Nova voz quente
-    ECHO = "echo"        # Voz masculina profissional
-    FABLE = "fable"      # Voz feminina expressiva
-    NOVA = "nova"        # Voz feminina jovem
-    ONYX = "onyx"        # Voz masculina profunda
-    SAGE = "sage"        # Nova voz sábia
-    SHIMMER = "shimmer"  # Voz feminina suave
+    """Tipos de voz disponíveis - 11 vozes da OpenAI
+
+    Vozes masculinas: ASH, BALLAD, ECHO, ONYX
+    Vozes femininas: ALLOY, CORAL, FABLE, NOVA, SAGE, SHIMMER
+    """
+    ALLOY = "alloy"      # Voz feminina (contralto)
+    ASH = "ash"          # Voz masculina (barítono)
+    BALLAD = "ballad"    # Voz masculina (tenor)
+    CORAL = "coral"      # Voz feminina (soprano)
+    ECHO = "echo"        # Voz masculina (tenor)
+    FABLE = "fable"      # Voz feminina (alto)
+    NOVA = "nova"        # Voz feminina (alto)
+    ONYX = "onyx"        # Voz masculina (baixo)
+    SAGE = "sage"        # Voz feminina (soprano)
+    SHIMMER = "shimmer"  # Voz feminina (contralto)
 
 class ToneType(Enum):
     """Tipos de tom para o podcast"""
@@ -160,104 +164,48 @@ class PersonaGenerator:
         # Pega o primeiro nome e normaliza
         first_name = name.split()[0].lower().strip()
 
+        print(f"🔍 Detectando gênero para: '{name}' (primeiro nome: '{first_name}')")
+
         # Verifica se é masculino
         if first_name in masculine_names:
-            # Alterna entre as duas vozes masculinas
-            return VoiceType.ECHO if hash(name) % 2 == 0 else VoiceType.ONYX
+            # Alterna entre as vozes masculinas disponíveis
+            masculine_voices = [VoiceType.ECHO, VoiceType.ONYX, VoiceType.ASH, VoiceType.BALLAD]
+            selected_voice = masculine_voices[hash(name) % len(masculine_voices)]
+            print(f"✅ Nome masculino detectado → {selected_voice.value}")
+            return selected_voice
 
         # Verifica se é feminino
         if first_name in feminine_names:
-            # Alterna entre as três vozes femininas
-            voice_options = [VoiceType.FABLE, VoiceType.NOVA, VoiceType.SHIMMER]
-            return voice_options[hash(name) % len(voice_options)]
+            # Alterna entre as vozes femininas disponíveis
+            feminine_voices = [VoiceType.FABLE, VoiceType.NOVA, VoiceType.SHIMMER, VoiceType.ALLOY, VoiceType.CORAL, VoiceType.SAGE]
+            selected_voice = feminine_voices[hash(name) % len(feminine_voices)]
+            print(f"✅ Nome feminino detectado → {selected_voice.value}")
+            return selected_voice
 
         # Fallback: tenta detectar por terminação comum
         if first_name.endswith(('o', 'os', 'ro', 'do', 'to')):
+            print(f"📝 Detectado como masculino pela terminação → echo")
             return VoiceType.ECHO  # Masculino
         elif first_name.endswith(('a', 'as', 'na', 'da', 'ta')):
+            print(f"📝 Detectado como feminino pela terminação → fable")
             return VoiceType.FABLE  # Feminino
 
-        # Fallback final: usa voz neutra
+        # Fallback final: usa voz feminina mais neutra (contralto)
+        print(f"⚠️ Fallback para voz neutra → alloy")
         return VoiceType.ALLOY
 
     def generate_personas(self, content_analysis: Dict[str, Any], config: PodcastConfig) -> Tuple[Persona, Persona]:
-        """Gera duas personas complementares para o podcast"""
+        """Gera duas personas complementares para o podcast - versão hardcoded para garantir consistência"""
 
-        persona_prompt = f"""
-        Baseado na análise de conteúdo, crie duas personas complementares para apresentar um podcast EM PORTUGUÊS BRASILEIRO:
+        print("🎤 Usando personas hardcoded para garantir consistência de gênero/voz")
 
-        ANÁLISE DO CONTEÚDO:
-        - Tópico: {content_analysis['topic']}
-        - Público-alvo: {content_analysis['target_audience']}
-        - Tom: {config.tone.value}
-        - Complexidade: {content_analysis['complexity_level']}/5
-        - Formato: {config.format_style}
-
-        IMPORTANTE:
-        - Use NOMES BRASILEIROS para as personas
-        - GARANTA CONSISTÊNCIA DE GÊNERO: nome masculino = persona masculina, nome feminino = persona feminina
-        - Todo conteúdo deve ser em PORTUGUÊS BRASILEIRO
-        - As personas devem soar naturais para o público brasileiro
-
-        Crie duas personas que se complementem:
-        1. Uma mais especialista/técnica
-        2. Uma mais questionadora/representando o público
-
-        Para cada persona, forneça:
-        - name: nome brasileiro típico (seja consistente com o gênero)
-        - role: papel no podcast (ex: "Especialista", "Mediadora")
-        - personality: personalidade em português
-        - expertise: área de especialização em português
-        - speaking_style: estilo de fala em português
-        - background: contexto profissional brasileiro
-
-        Responda APENAS em JSON com estrutura:
-        {{
-            "persona1": {{ "name": "...", "role": "...", etc }},
-            "persona2": {{ "name": "...", "role": "...", etc }}
-        }}
-        """
-
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "Você é um especialista em criação de personas para podcasts. Crie personas autênticas e complementares com consistência de gênero."},
-                    {"role": "user", "content": persona_prompt}
-                ],
-                temperature=0.8
-            )
-
-            personas_data = json.loads(response.choices[0].message.content)
-
-            # Cria personas com vozes baseadas no gênero
-            persona1 = Persona(
-                voice=self._detect_gender_and_assign_voice(personas_data['persona1']['name']),
-                tone=config.tone,
-                **personas_data['persona1']
-            )
-
-            persona2 = Persona(
-                voice=self._detect_gender_and_assign_voice(personas_data['persona2']['name']),
-                tone=config.tone,
-                **personas_data['persona2']
-            )
-
-            return persona1, persona2
-
-        except Exception as e:
-            print(f"❌ Erro na geração de personas: {e}")
-            # Fallback
-            return self._get_default_personas(config)
-
-    def _get_default_personas(self, config: PodcastConfig) -> Tuple[Persona, Persona]:
-        """Personas padrão caso haja erro - com consistência de gênero"""
+        # Personas fixas com gênero/voz corretos
         persona1 = Persona(
             name="Ana Paula",
             role="Especialista",
             personality="Analítica e didática, com sotaque brasileiro natural",
             expertise="Conhecimento técnico profundo com experiência brasileira",
-            voice=VoiceType.FABLE,  # Voz feminina expressiva para Ana Paula
+            voice=VoiceType.FABLE,  # Voz feminina (alto)
             tone=config.tone,
             speaking_style="Clara e estruturada, fala em português brasileiro",
             background="Profissional brasileira experiente"
@@ -268,7 +216,38 @@ class PersonaGenerator:
             role="Mediador",
             personality="Curioso e questionador, com jeito brasileiro de falar",
             expertise="Comunicação e síntese com foco no público brasileiro",
-            voice=VoiceType.ECHO,    # Voz masculina profissional para Ricardo
+            voice=VoiceType.ECHO,  # Voz masculina (tenor)
+            tone=config.tone,
+            speaking_style="Conversacional e envolvente, típico brasileiro",
+            background="Comunicador brasileiro experiente"
+        )
+
+        print(f"🎤 Persona 1: {persona1.name} (feminina) → {persona1.voice.value}")
+        print(f"🎤 Persona 2: {persona2.name} (masculino) → {persona2.voice.value}")
+
+        return persona1, persona2
+
+    def _get_default_personas(self, config: PodcastConfig) -> Tuple[Persona, Persona]:
+        """Personas padrão caso haja erro - com consistência de gênero"""
+        print("🎤 Usando personas padrão")
+
+        persona1 = Persona(
+            name="Ana Paula",
+            role="Especialista",
+            personality="Analítica e didática, com sotaque brasileiro natural",
+            expertise="Conhecimento técnico profundo com experiência brasileira",
+            voice=VoiceType.FABLE,  # Voz feminina (alto)
+            tone=config.tone,
+            speaking_style="Clara e estruturada, fala em português brasileiro",
+            background="Profissional brasileira experiente"
+        )
+
+        persona2 = Persona(
+            name="Ricardo",
+            role="Mediador",
+            personality="Curioso e questionador, com jeito brasileiro de falar",
+            expertise="Comunicação e síntese com foco no público brasileiro",
+            voice=VoiceType.ECHO,  # Voz masculina (tenor)
             tone=config.tone,
             speaking_style="Conversacional e envolvente, típico brasileiro",
             background="Comunicador brasileiro experiente"
