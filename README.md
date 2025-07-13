@@ -17,3 +17,8 @@ python course_content_agent.py "Tema do curso"
 ```
 
 This script wraps the `backend/course_content_agent.py` module and works on Windows and Unix systems.
+The generated data will be saved into three files in the current directory:
+
+* `course_content.json` – the structured course outline
+* `flashcards.json` – flashcards for each lesson
+* `quiz.json` – a quiz based on the course content

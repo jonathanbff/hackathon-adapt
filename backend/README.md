@@ -16,7 +16,11 @@ pip install -r requirements.txt
 python course_content_agent.py "Tema do curso"
 ```
 
-O script exibirá a estrutura do curso em formato JSON.
+O script exibirá a estrutura do curso em formato JSON e também salvará o resultado em três arquivos:
+
+* `course_content.json` – contém o conteúdo do curso
+* `flashcards.json` – flashcards gerados para cada aula
+* `quiz.json` – quiz baseado no curso
 
 ### Gerar flashcards
 
